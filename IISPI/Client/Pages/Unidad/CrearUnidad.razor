@@ -1,0 +1,51 @@
+﻿@page "/unidad/crear"
+@inject NavigationManager NavigationManager
+@inject UnidadesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h3><b>Crear unidad</b></h3>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Volver al listado
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormUnidad unidad="@unidad" TextBotonSubmit="Crear unidad" OnValidSubmit="@CrearUnid" />
+    </div>
+</div>
+
+@code {
+    public UnidadesDTO unidad = new UnidadesDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task CrearUnid()
+    {
+        var respuesta = await Service.Post(unidad);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var content = await respuesta.Content.ReadAsStringAsync();
+            var id = JsonConvert.DeserializeObject<int>(content);
+            var obj = await Service.Get(id);
+            NavigationManager.NavigateTo("/unidades");
+            await JS.InvokeVoidAsync("simple", "¡Éxito!", $"Unidad {obj.DescUnidad} creada correctamente", "success");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear unidad.", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/unidades");
+    }
+}
