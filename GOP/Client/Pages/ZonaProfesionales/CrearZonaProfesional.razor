@@ -1,0 +1,54 @@
+﻿@page "/zonaprofesional/crear/{zona:int}"
+@inject NavigationManager NavigationManager
+@inject ZonaProfesionalesService Service
+@inject ZonasService ZonaService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Agregar profesional a zona @zonaDTO.NombreZona</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormZonaProfesional zonaProfesional="@zonaProfesional" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoProfesionalZona" />
+    </div>
+</div>
+
+@code {
+    public ZonaProfesionalDTO zonaProfesional { get; set; } = new ZonaProfesionalDTO();
+
+    [Parameter] public int zona { get; set; }
+
+    public ZonaDTO zonaDTO = new ZonaDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        zonaProfesional.ZonaId = zona;
+
+        zonaDTO = await ZonaService.Get(zona);
+    }
+
+    async Task NuevoProfesionalZona()
+    {
+        var respuesta = await Service.Post(zonaProfesional);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/zonaprofesionales/{zona}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear profesional:{respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/zonaprofesionales/{zona}");
+    }
+}

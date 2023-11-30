@@ -1,0 +1,49 @@
+﻿@page "/empresaprofesional/crear/{empresa:int}"
+@inject NavigationManager NavigationManager
+@inject EmpresaProfesionalesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Agregar profesional a empresa</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEmpresaProfesional empresaProfesional="@empresaProfesional" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoProfesionalEmpresa" />
+    </div>
+</div>
+
+@code {
+    public EmpresaProfesionalDTO empresaProfesional { get; set; } = new EmpresaProfesionalDTO();
+
+    [Parameter] public int empresa { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        empresaProfesional.EmpresaId = empresa;
+    }
+
+    async Task NuevoProfesionalEmpresa()
+    {
+        var respuesta = await Service.Post(empresaProfesional);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/empresaprofesionales/{empresa}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear profesional: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/empresaprofesionales/{empresa}");
+    }
+}

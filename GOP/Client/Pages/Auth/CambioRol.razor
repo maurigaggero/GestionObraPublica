@@ -1,0 +1,101 @@
+﻿@page "/cambiorol/{personaId:int}"
+@using GOP.Shared.DTOs.Identity
+@inject UserService UserService
+@inject PersonaService PersonaService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    <h5>Cambiar Rol</h5>
+    <div class="d-flex justify-content-end mb-1" id="header">
+        <a href="personas" class="btn btn-sm btn-secondary m-1">
+            <i class="oi oi-arrow-circle-left"></i>
+        </a>
+    </div>
+</div>
+
+
+<EditForm Model="@rolNuevo" OnValidSubmit="@CambiarRol">
+    <div class="form-field mt-2 mb-2">
+
+        @if (persona != null)
+        {
+            <div class="px-2 py-1">
+                <dt>Nombre y Apellido de la Persona</dt>
+                <dd>@persona.Nombre @persona.Apellido</dd>
+
+                <dt>DNI de la Persona</dt>
+                <dd>@persona.DNI</dd>
+
+                <dt>Email</dt>
+                <dd>@persona.Email</dd>
+            </div>
+        }
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Email</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="rolNuevo.Email" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => rolNuevo.Email)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Rol</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputSelect @bind-Value="rolNuevo.Rol" class="form-control">
+                        @foreach (var tipo in Enum.GetValues(typeof(EnumRol)))
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </InputSelect>
+                </div>
+                <ValidationMessage For="@(() => rolNuevo.Rol)" />
+            </div>
+        </div>
+    </div>
+
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> Cambiar </text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public int personaId { get; set; }
+
+    public RolDTO rolAnterior { get; set; } = new RolDTO();
+    public RolDTO rolNuevo { get; set; } = new RolDTO();
+    public PersonaDTO persona { get; set; } = new PersonaDTO();
+
+    AuthenticationState authState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        persona = await PersonaService.Get(personaId);
+        rolAnterior = await UserService.GetRol(persona.Email);
+        rolNuevo = rolAnterior;
+    }
+
+    async Task CambiarRol()
+    {
+        var borra = await UserService.BorrarRol(rolAnterior);
+        var creaNuevo = await UserService.CargarRol(rolNuevo);
+
+        if (borra.IsSuccessStatusCode && creaNuevo.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/personas");
+            await JS.InvokeVoidAsync("simple", "Exito!", $"Rol cambiado a: {rolNuevo.Rol} correctamente.", "success");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)creaNuevo.StatusCode)}. No se pudo cambiar rol. {(string)await creaNuevo.Content.ReadAsStringAsync()}", "error");
+    }
+}

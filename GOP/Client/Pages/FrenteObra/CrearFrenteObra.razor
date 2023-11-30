@@ -1,0 +1,49 @@
+﻿@page "/frenteobra/crear/{zona:int}"
+@inject NavigationManager NavigationManager
+@inject FrentesObraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Agregar Frente de obra</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormFrenteObra frenteObra="@frenteObra" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoFrente" />
+    </div>
+</div>
+
+@code {
+    public FrenteObraDTO frenteObra = new FrenteObraDTO();
+
+    [Parameter] public int zona { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        frenteObra.ZonaId = zona;
+    }
+
+    async Task NuevoFrente()
+    {
+        var respuesta = await Service.Post(frenteObra);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/frentesobra/{zona}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear frente de obra: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/frentesobra/{zona}");
+    }
+}

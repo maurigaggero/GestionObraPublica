@@ -1,0 +1,195 @@
+﻿@inject NavigationManager NavigationManager
+@inject UserService Service
+@inject IJSRuntime JS
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <img src="/icon.png" width="30" height="30" class="d-inline-block align-top" alt="">
+            <b class="navbar-brand" href="">GOP</b>
+        </a>
+
+        <div class="d-flex justify-content-end">
+            <button title="Navigation menu" class="navbar-toggler m-1" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink style="background-color:  rgba(255, 0, 49, 0.8);" class="nav-link" href="/logout">
+                <span class="oi oi-account-login" aria-hidden="true"></span> <b>Cerrar sesión</b>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/cambiarcontraseña">
+                <span class="oi oi-lock-locked" aria-hidden="true"></span> <b>Cambiar contraseña</b>
+            </NavLink>
+        </div>
+
+        @if (FlagMenu == EnumMenu.Nada)
+        {
+            <div class="nav-item px-3">
+            </div>
+        }
+
+        @if (FlagMenu == EnumMenu.Evento)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="eventos" Match="NavLinkMatch.All">
+                    <span class="oi oi-home" aria-hidden="true"></span> <b>Eventos</b>
+                </NavLink>
+            </div>
+        }
+
+        @if (FlagMenu == EnumMenu.Certificado
+        || FlagMenu == EnumMenu.Contrato)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="eventos" Match="NavLinkMatch.All">
+                    <span class="oi oi-home" aria-hidden="true"></span> <b>Eventos</b>
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="contratos">
+                    <span class="oi oi-document" aria-hidden="true"></span> <b>Contratos</b>
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="reportes">
+                    <span class="oi oi-spreadsheet" aria-hidden="true"></span> <b>Reportes</b>
+                </NavLink>
+            </div>
+        }
+
+        @if (FlagMenu == EnumMenu.Admin
+        || FlagMenu == EnumMenu.BaseDatos)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="eventos" Match="NavLinkMatch.All">
+                    <span class="oi oi-home" aria-hidden="true"></span> <b>Eventos</b>
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="contratos">
+                    <span class="oi oi-document" aria-hidden="true"></span> <b>Contratos</b>
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="reportes">
+                    <span class="oi oi-spreadsheet" aria-hidden="true"></span> <b>Reportes</b>
+                </NavLink>
+            </div>
+            <div class="nav-item dropright px-3">
+                <div type="button" class="nav-item dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <NavLink class="nav-link" type="button" @onclick="Dropdown">
+                        <span class="oi oi-plus" aria-hidden="true"></span> <b>ABM</b>
+                    </NavLink>
+                </div>
+                <div class="dropdown-menu" style="width:20rem; background-color:  rgba(0,0,0,0.9);">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="items">
+                            <span class="oi oi-list" aria-hidden="true"></span> <b>Items</b>
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="calles">
+                            <span class="oi oi-map-marker" aria-hidden="true"></span> <b>Calles</b>
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="unidades">
+                            <span class="oi oi-calculator" aria-hidden="true"></span> <b>Unidades</b>
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="empresas">
+                            <span class="oi oi-monitor" aria-hidden="true"></span> <b>Empresas</b>
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="zonas">
+                            <span class="oi oi-location" aria-hidden="true"></span> <b>Zonas</b>
+                        </NavLink>
+                    </div>
+                    @if (FlagMenu == EnumMenu.Admin)
+                    {
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="personas">
+                                <span class="oi oi-people" aria-hidden="true"></span> <b>Personas</b>
+                            </NavLink>
+                        </div>
+                    }
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="estructuras">
+                            <span class="oi oi-caret-top" aria-hidden="true"></span> <b>Tipos de Estructura</b>
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="tipoeventos">
+                            <span class="oi oi-flag" aria-hidden="true"></span> <b>Tipos Eventos</b>
+                        </NavLink>
+                    </div>
+                </div>
+            </div>
+        }
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private EnumMenu FlagMenu { get; set; } = EnumMenu.Nada;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await Service.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            if (authState.User.Claims.Any(x => x.Value.ToUpper() == "HYS"))
+            {
+                FlagMenu = EnumMenu.Evento;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "FRENTE"))
+            {
+                FlagMenu = EnumMenu.Certificado;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "ZONA1"
+                                                || x.Value.ToUpper() == "ZONA2"))
+            {
+                FlagMenu = EnumMenu.Contrato;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "BASEDATOS"))
+            {
+                FlagMenu = EnumMenu.BaseDatos;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "ADMIN"))
+            {
+                FlagMenu = EnumMenu.Admin;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1"))
+            {
+                FlagMenu = EnumMenu.Contrato;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA2"))
+            {
+                FlagMenu = EnumMenu.Contrato;
+            }
+        }
+    }
+
+    private async Task Dropdown()
+    {
+        await JS.InvokeVoidAsync("dropdown", "#botones");
+    }
+}

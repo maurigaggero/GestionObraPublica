@@ -1,0 +1,49 @@
+﻿@page "/itemscontrolparams/crear/{itemControl:int}"
+@inject NavigationManager NavigationManager
+@inject ItemsControlParamsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Parametro para Control</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItemControlParams itemControlParam="@itemControlParams" TextBotonSubmit="Guardar" OnValidSubmit="@CrearControl" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public int itemControl { get; set; }
+
+    public ItemControlParamDTO itemControlParams = new ItemControlParamDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        itemControlParams.ItemControlId = itemControl;
+    }
+
+    async Task CrearControl()
+    {
+        var respuesta = await Service.Post(itemControlParams);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/itemscontrolparams/{itemControl}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear parametro: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/itemscontrolparams/{itemControl}");
+    }
+}

@@ -1,0 +1,109 @@
+﻿@page "/"
+@using GOP.Client.Services
+@using GOP.Shared.DTOs.Identity
+@inject NavigationManager NavigationManager
+@inject UserService Service
+@inject IJSRuntime JS
+
+<style type="text/css">
+    #login {
+        -webkit-box-shadow: 10px 10px 17px -7px rgba(0,0,0,0.22);
+        -moz-box-shadow: 10px 10px 17px -7px rgba(0,0,0,0. 22);
+        box-shadow: 10px 10px 17px -7px rgba(0,0,0, 0.22);
+    }
+
+    .background {
+        z-index: 1;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+        .background:before {
+            content: ' ';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.4;
+            background-image: url(../background.jpg);
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+
+</style>
+
+<div class="background">
+    <div class="vh-100 row m-0 align-items-center justify-content-center" style="z-index: 2">
+        <div class="align-items-center" style="width:700px;">
+            <div id="login" class="card p-3">
+                <h3 class="p-3">Inicie sesión para continuar</h3>
+                <div class="p-2">
+                    <EditForm Model="@credenciales" OnValidSubmit="OnValidSubmit">
+                        <div class="form-group m-2">
+                            <label>Correo</label>
+                            <InputText type="email" @bind-Value="credenciales.Email" class="form-control" placeholder="example@mail.com" />
+                            <ValidationMessage For="@(() => credenciales.Email)" />
+                        </div>
+
+                        <div class="form-group m-2">
+                            <label>Contraseña</label>
+                            <InputText @bind-Value="credenciales.Psw" type="password" class="form-control" placeholder="Contraseña" />
+                            <ValidationMessage For="@(() => credenciales.Psw)" />
+                        </div>
+
+                        <div class="d-flex justify-content-center form-group mt-4">
+                            <button class=" btn btn-primary" type="submit">
+                                Iniciar Sesión
+                            </button>
+                        </div>
+
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        var fechaExpira = await JS.InvokeAsync<string>("localStorage.getItem", "EXPIRATIONTOKENKEY");
+        var authState = await Service.GetAuthenticationStateAsync();
+
+        DateTime expira;
+        DateTime.TryParse(fechaExpira, out expira);
+
+        if (!authState.User.Identity.IsAuthenticated || expira <= DateTime.UtcNow)
+        {
+            await Service.Logout();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("eventos", forceLoad: true);
+        }
+    }
+
+    public CredencialUserDTO credenciales = new CredencialUserDTO();
+
+    async Task OnValidSubmit()
+    {
+        var respuesta = await Service.Login(credenciales);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/eventos", forceLoad: true);
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo iniciar sesión. {(string)await respuesta.Content.ReadAsStringAsync()}", "error");
+    }
+
+}

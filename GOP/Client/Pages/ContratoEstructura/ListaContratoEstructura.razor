@@ -1,0 +1,241 @@
+﻿@page "/contratoestructura/{contratoId:int}"
+@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject ContratoEstructuraService EstructuraService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    @if (contrato != null)
+    {
+        <h5>@contrato.Descripcion </h5>
+        <div>
+            <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i> Atrás
+            </button>
+            <a href="contratoestructura/crear/@contrato.Id" class="btn btn-sm btn-success">
+                <i class="oi oi-plus"></i>
+            </a>
+        </div>
+    }
+
+</div>
+
+
+@if (estructuras == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (estructuras.Count() == 0)
+{
+    <p>No se encontraron estructuras.</p>
+}
+else
+{
+    <div class="d-flex justify-content-between mb-1" id="footer">
+        <nav aria-label="Page navigation example">
+            <ul class="pagination pagination-sm">
+                <li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+                <li class="page-item"><button class="page-link">@pagina</button></li>
+                <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+            </ul>
+        </nav>
+    </div>
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Estructuras</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var estructura in estructuras)
+            {
+                <tr>
+                    <td><a style="cursor:pointer;" @onclick="(() => VerDetalle(estructura.Id))">@estructura.CodEstructura - @estructura.DescEstructura</a></td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-warning m-1" href="contratoestructura/editar/@estructura.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+                        <button @onclick="@(() => BorrarEstructura(estructura.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                        <a class="btn btn-sm btn-outline-dark m-1" href="/contratoestructuradocs/@estructura.Id" data-toggle="tooltip" data-placement="bottom" title="Documentos"><i class="oi oi-document"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-start mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+</div>
+
+
+<!--Modal Ver Detalle Estructura-->
+<div class="modal fade" id="modalVerDetalleEstructura" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Detalle de Estructura</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-2">
+                    @if (estructura != null && estructura.Contrato != null && estructura.EstructuraTipo != null)
+                    {
+                        <dl class="dl-horizontal">
+                            <dt>Contrato</dt>
+                            <dd>@estructura.Contrato.NumExpediente - @estructura.Contrato.Zona.NombreZona</dd>
+
+                            <dt>Codigo Estructura</dt>
+                            <dd>@estructura.CodEstructura</dd>
+
+                            <dt>Contrato</dt>
+                            <dd>@estructura.DescEstructura </dd>
+
+                            <dt>Tipo</dt>
+                            <dd>@estructura.EstructuraTipo.DescTipo</dd>
+
+                            <dt>Calle</dt>
+                            <dd>
+                                @if (estructura.Calle != null)
+                                {
+                                    @estructura.Calle.NombreCalle
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+                            </dd>
+
+                            <dt>Entre</dt>
+                            <dd>
+                                @if (estructura.EntreCalle != null)
+                                {
+                                    @estructura.EntreCalle.NombreCalle
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+                            </dd>
+
+                            <dt>Y</dt>
+                            <dd>
+                                @if (estructura.YCalle != null)
+                                {
+                                    @estructura.YCalle.NombreCalle
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+                            </dd>
+
+                            <dt>Esquina</dt>
+                            <dd>
+                                @if (estructura.EsquinaCalle != null)
+                                {
+                                    @estructura.EsquinaCalle.NombreCalle
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+                            </dd>
+
+                            <dt>Longitud</dt>
+                            <dd>@estructura.Longitud</dd>
+
+                            <dt>Ancho</dt>
+                            <dd>@estructura.Ancho</dd>
+                        </dl>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public ContratoDTO contrato = new ContratoDTO();
+
+    public ContratoEstructuraDTO estructura = new ContratoEstructuraDTO();
+
+    [Parameter] public int contratoId { get; set; }
+
+    public IEnumerable<ContratoEstructuraDTO> estructuras { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetContrato();
+        await Paginar(false);
+    }
+
+    private async Task BorrarEstructura(int id)
+    {
+        var item = await EstructuraService.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar estructura {item.DescEstructura}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await EstructuraService.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Estructura eliminada", "success");
+                await Paginar(false);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar estructura", "error");
+            }
+        }
+    }
+
+    async Task VerDetalle(int id)
+    {
+        estructura = await EstructuraService.Get(id);
+        await JS.InvokeVoidAsync("levantaModal", "#modalVerDetalleEstructura");
+    }
+
+    private async Task GetContrato()
+    {
+        contrato = await Service.GetNoFull(contratoId);
+    }
+
+    async Task Paginar(bool next)
+    {
+        if (!next && pagina > 1) pagina--;
+        if (next) pagina++;
+
+        PaginacionDTO pag = new PaginacionDTO() { Pagina = pagina, RegistrosPorPagina = 10 };
+        estructuras = await EstructuraService.GetFull(pag, contratoId);
+        registros = estructuras.Count();
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/contratos");
+    }
+}

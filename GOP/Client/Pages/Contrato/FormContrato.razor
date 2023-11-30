@@ -1,0 +1,235 @@
+﻿@inject ContratoService Service
+@inject ZonasService ZonaService
+@inject EmpresasService EmpresaService
+@inject IJSRuntime JS
+
+<EditForm Model="@contrato" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Numero Expendiente</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="contrato.NumExpediente" placeholder="Numero expendiente del contrato" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contrato.NumExpediente)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Caratula</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="contrato.Caratula" placeholder="Caratula del contrato" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contrato.Caratula)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Nombre</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputTextArea @bind-Value="contrato.Descripcion" placeholder="Descripcion del contrato" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contrato.Descripcion)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Zona</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetZonas"
+                                   ConvertMethod="Convert"
+                                   @bind-Value="contrato.ZonaId"
+                                   placeholder="Buscar Zona">
+                    <SelectedTemplate Context="zonaId">
+                        @{
+                            var selected = ZonaSeleccionada(zonaId);
+
+                            <text>@selected?.CodigoZona - @selected?.NombreZona</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="zona">
+                        @zona.CodigoZona  - @zona.NombreZona
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => contrato.ZonaId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaZona" data-toggle="tooltip" data-placement="left" title="Si la zona no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Empresa</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetEmpresas"
+                                   ConvertMethod="Convert"
+                                   @bind-Value="contrato.EmpresaId"
+                                   placeholder="Buscar Empresa">
+                    <SelectedTemplate Context="empresaId">
+                        @{
+                            var selected = EmpresaSeleccionada(empresaId);
+
+                            <text>@selected?.CUIT - @selected?.Nombre</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="empresa">
+                        @empresa.CUIT  - @empresa.Nombre
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => contrato.EmpresaId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaEmpresa" data-toggle="tooltip" data-placement="left" title="Si la empresa no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> @TextBotonSubmit</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+<!--Modal Zonas-->
+<div class="modal fade" id="modalCrearZona" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Zona</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.Zona.FormZona TextBotonSubmit="Guardar" OnValidSubmit="CrearZona" zona="zona"></GOP.Client.Pages.Zona.FormZona>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Modal Empresas-->
+<div class="modal fade" id="modalCrearEmpresa" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Empresa</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.Empresa.FormEmpresa TextBotonSubmit="Guardar" OnValidSubmit="CrearEmpresa" empresa="empresa"></GOP.Client.Pages.Empresa.FormEmpresa>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ContratoDTO contrato { get; set; } = new ContratoDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    IEnumerable<ZonaDTO> zonas = new List<ZonaDTO>();
+    IEnumerable<EmpresaDTO> empresas = new List<EmpresaDTO>();
+
+    ZonaDTO zona = new ZonaDTO();
+    EmpresaDTO empresa = new EmpresaDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        zonas = await ZonaService.GetFull();
+        empresas = await EmpresaService.GetFull();
+    }
+
+    private async Task<IEnumerable<ZonaDTO>> GetZonas(string searchText)
+    {
+        return await Task.FromResult(zonas.Where(x => x.NombreZona.ToUpper().Contains(searchText.ToUpper())).ToList());
+    }
+
+    private int? Convert(ZonaDTO zona)
+    {
+        return zona?.Id;
+    }
+
+    private ZonaDTO ZonaSeleccionada(int? id)
+    {
+        return zonas.FirstOrDefault(p => p.Id == id);
+    }
+
+    async Task CrearZona()
+    {
+        var respuesta = await ZonaService.Post(zona);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearZona");
+            zonas = await ZonaService.GetFull();
+            zona = new();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear zona: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void NuevaZona()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearZona");
+    }
+
+    private async Task<IEnumerable<EmpresaDTO>> GetEmpresas(string searchText)
+    {
+        var cuit = await Task.FromResult(empresas.Where(x => x.CUIT.ToUpper().Contains(searchText.ToUpper())).ToList());
+        var nombre = await Task.FromResult(empresas.Where(x => x.Nombre.ToUpper().Contains(searchText.ToUpper())).ToList());
+        if (cuit.Count > 0)
+            return cuit;
+        else
+            return nombre;
+    }
+
+    private int? Convert(EmpresaDTO empresa)
+    {
+        return empresa?.Id;
+    }
+
+    private EmpresaDTO EmpresaSeleccionada(int? id)
+    {
+        return empresas.FirstOrDefault(p => p.Id == id);
+    }
+
+    async Task CrearEmpresa()
+    {
+        var respuesta = await EmpresaService.Post(empresa);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearEmpresa");
+            empresas = await EmpresaService.GetFull();
+            empresa = new();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear empresa: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void NuevaEmpresa()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearEmpresa");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+}

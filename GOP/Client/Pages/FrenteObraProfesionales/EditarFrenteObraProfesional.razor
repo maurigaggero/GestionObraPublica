@@ -1,0 +1,50 @@
+﻿@page "/frenteobraprofesional/editar/{fObra:int}"
+@inject NavigationManager NavigationManager
+@inject FrenteObraProfesionalesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (frenteObraProfesional.FrenteObra != null)
+    {
+        <h4><b>Editar Profesional del Frente de Obra: @frenteObraProfesional.FrenteObra.NombreFrenteObra</b></h4>
+        <div>
+            <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i> Atrás
+            </button>
+        </div>
+    }
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormFrenteObraProfesional frenteObraProfesional="@frenteObraProfesional" TextBotonSubmit="Guardar" OnValidSubmit="@EditItems" />
+    </div>
+</div>
+
+@code {
+    public FrenteObraProfesionalDTO frenteObraProfesional = new FrenteObraProfesionalDTO();
+
+    [Parameter] public int fObra { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        frenteObraProfesional = await Service.Get(fObra);
+    }
+
+    async Task EditItems()
+    {
+        var respuesta = await Service.Put(frenteObraProfesional);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/frentesobraprofesionales/{frenteObraProfesional.FrenteObraId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar profesional: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/frentesobraprofesionales/{frenteObraProfesional.FrenteObraId}");
+    }
+}

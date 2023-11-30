@@ -1,0 +1,59 @@
+﻿@page "/altausuarios/{personaId:int}"
+@using GOP.Shared.DTOs.Identity
+@inject NavigationManager NavigationManager
+@inject UserService Service
+@inject PersonaService PersonaService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Alta usuarios</b></h4>
+    </div>
+    <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+        <i class="oi oi-arrow-circle-left"></i> Atrás
+    </button>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormUser usuario="@usuario" persona="persona" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoUser" />
+    </div>
+</div>
+
+@code {
+    public RegistrarUserDTO usuario = new RegistrarUserDTO();
+
+    [Parameter] public int personaId { get; set; }
+
+    public PersonaDTO persona { get; set; } = new PersonaDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        persona = await PersonaService.Get(personaId);
+    }
+
+    async Task NuevoUser()
+    {
+        if (usuario.Contraseña != usuario.ContraseñaRepetida)
+        {
+            await JS.InvokeVoidAsync("simple", "Error", $"Error. Las contraseñas no coinciden.", "error");
+        }
+        else
+        {
+            var respuesta = await Service.Registrar(usuario);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/personas");
+            }
+            else
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear usuario. {(string)await respuesta.Content.ReadAsStringAsync()}", "error");
+        }
+
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/personas");
+    }
+}

@@ -1,0 +1,50 @@
+﻿@page "/itemcontroldocs/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ItemControlDocsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (itemControlDocs != null && itemControlDocs.ItemControl != null)
+    {
+        <h4><b>Editar Documento del Control @itemControlDocs.ItemControl.DescControl</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItemControlDocs itemControlDocs="@itemControlDocs" TextBotonSubmit="Guardar" OnValidSubmit="@EditControl" ocultaCarga="true" />
+    </div>
+</div>
+
+@code {
+    public ItemControlDocDTO itemControlDocs = new ItemControlDocDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        itemControlDocs = await Service.Get(id);
+    }
+
+    async Task EditControl()
+    {
+        var respuesta = await Service.Put(itemControlDocs);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/itemcontroldocs/{itemControlDocs.ItemControlId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar documento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/itemcontroldocs/{itemControlDocs.ItemControlId}");
+    }
+}

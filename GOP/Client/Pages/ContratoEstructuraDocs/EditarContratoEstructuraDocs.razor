@@ -1,0 +1,50 @@
+﻿@page "/contratoestructuradocs/editar/{cEstructura:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoEstructuraDocsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (contratoEstructuraDocs != null)
+    {
+        <h4><b>Editar Documento de la Estructura del Contrato @contratoEstructuraDocs.Descripcion</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormContratoEstructuraDocs contratoEstructuraDocs="@contratoEstructuraDocs" TextBotonSubmit="Guardar" OnValidSubmit="@EditContrato" ocultaCarga="true" />
+    </div>
+</div>
+
+@code {
+    public ContratoEstructuraDocDTO contratoEstructuraDocs = new ContratoEstructuraDocDTO();
+
+    [Parameter] public int cEstructura { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        contratoEstructuraDocs = await Service.Get(cEstructura);
+    }
+
+    async Task EditContrato()
+    {
+        var respuesta = await Service.Put(contratoEstructuraDocs);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+                        NavigationManager.NavigateTo($"/contratoestructuradocs/{contratoEstructuraDocs.ContratoEstructuraId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar documento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+            NavigationManager.NavigateTo($"/contratoestructuradocs/{contratoEstructuraDocs.ContratoEstructuraId}");
+    }
+}

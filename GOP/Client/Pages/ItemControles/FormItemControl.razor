@@ -1,0 +1,61 @@
+﻿@inject ItemsService ItemsService
+@inject IJSRuntime JS
+
+<EditForm Model="@itemControl" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Código</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@itemControl.CodControl" placeholder="Código de Control" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControl.CodControl)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@itemControl.DescControl" placeholder="Descripción de Control" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControl.DescControl)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Item</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="itemControl.ItemId" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControl.ItemId)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+@code {
+    [Parameter] public ItemControlDTO itemControl { get; set; } = new ItemControlDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public bool Editar { get; set; }
+
+    ItemDTO item = new ItemDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        
+    }
+
+}

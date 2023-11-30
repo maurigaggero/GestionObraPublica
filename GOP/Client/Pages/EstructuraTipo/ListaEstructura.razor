@@ -1,0 +1,139 @@
+﻿@page "/estructuras"
+@inject NavigationManager NavigationManager
+@inject EstructuraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    <h5>Tipos de Estructuras</h5>
+    <div>
+        <a href="estructura/crear" class="btn btn-sm btn-success">
+            <i class="oi oi-plus"></i>
+        </a>
+    </div>
+</div>
+
+
+@if (estructuras == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (estructuras.Count() == 0)
+{
+    <p>No se encontraron tipos de estructuras.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Codigo</th>
+                <th>Descripcion</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var estructura in estructuras)
+            {
+                <tr>
+                    <td>@estructura.CodTipo</td>
+                    <td>@estructura.DescTipo</td>
+                    <td>   
+                        <a class="btn btn-sm btn-outline-warning m-1" href="estructura/editar/@estructura.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+                        <button @onclick="@(() => BorrarEstructura(estructura.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                             <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+       @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public IEnumerable<EstructuraTipoDTO> estructuras { get; set; }
+    public IEnumerable<EstructuraTipoDTO> estructurasPag { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetEstructuras();
+        await Paginar(false);
+    }
+
+    private async Task BorrarEstructura(int id)
+    {
+        var obj = await Service.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar estructura {obj.DescTipo}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await Service.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Estructura eliminada", "success");
+                await GetEstructuras();
+                await Paginar(false);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar estructura", "error");
+            }
+        }
+    }
+
+    private async Task GetEstructuras()
+    {
+        estructuras = await Service.GetFull();
+        estructurasPag = estructuras;
+    }
+
+    async Task Paginar(bool next)
+    {
+        estructuras = estructurasPag;
+        int cantidadPorPagina = 10;
+        registros = estructuras.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        estructuras = estructuras.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+}

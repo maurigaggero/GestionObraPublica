@@ -1,0 +1,273 @@
+﻿@using System.Globalization
+@inject EventoService Service
+@inject ZonasService ZonaService
+@inject EmpresasService EmpresaService
+@inject EventoTipoService TipoService
+@inject ContratoService ContratoService
+@inject FrentesObraService FrenteService
+@inject CertificadoService CertificadoService
+@inject IJSRuntime JS
+
+<EditForm Model="@evento" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Fecha</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputDate @bind-Value="evento.Fecha" placeholder="Fecha del evento" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => evento.Fecha)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Título</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="evento.Título" placeholder="Título del evento" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => evento.Título)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripcion</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputTextArea @bind-Value="evento.DescEvento" placeholder="Descripcion del evento" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => evento.DescEvento)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Tipo</label>
+            <div class="col">
+                @if (tipos != null)
+                {
+                    <InputSelect @bind-Value="evento.EventoTipoId" class="form-control">
+                        <option selected value="">Seleccione Tipo Evento</option>
+                        @foreach (var tipo in tipos)
+                        {
+                            <option value="@tipo.Id">@tipo.DescTipo</option>
+                        }
+                    </InputSelect>
+                }
+                <ValidationMessage For="@(() => evento.EventoTipoId)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2" hidden="@ocultaContrato">
+            <label class="col-form-label">Contrato</label>
+            <div class="col">
+                @if (tipos != null)
+                {
+                    <InputSelect @bind-Value="evento.ContratoId" class="form-control" @onfocusin="ValidaContrato" @onfocusout="ValidaContrato">
+                        <option selected value="">Seleccione Contrato</option>
+                        @foreach (var contrato in contratos)
+                        {
+                            <option value="@contrato.Id">@contrato.NumExpediente - @contrato.Zona.CodigoZona</option>
+                        }
+                    </InputSelect>
+                }
+                <ValidationMessage For="@(() => evento.ContratoId)" />
+            </div>
+        </div>
+
+
+        @if (evento.ContratoId == null)
+        {
+            <div class="form-group row p-2">
+                <label class="col-form-label">Empresa</label>
+                <div class="col">
+                    @if (empresas != null)
+                    {
+                        <InputSelect @bind-Value="evento.EmpresaId" class="form-control">
+                            <option selected value="">Seleccione Empresa</option>
+                            @foreach (var empresa in empresas)
+                            {
+                                <option value="@empresa.Id">@empresa.CUIT - @empresa.Nombre</option>
+                            }
+                        </InputSelect>
+                    }
+                    <ValidationMessage For="@(() => evento.EmpresaId)" />
+                </div>
+            </div>
+
+            <div class="form-group row p-2">
+                <label class="col-form-label">Zona</label>
+                <div class="col">
+                    @if (zonas != null)
+                    {
+                        <InputSelect @bind-Value="evento.ZonaId" class="form-control" @onfocusin="CargaFrenteObra" @onfocusout="CargaFrenteObra">
+                            <option selected value="">Seleccione Zona</option>
+                            @foreach (var zona in zonas)
+                            {
+                                <option value="@zona.Id">@zona.CodigoZona - @zona.NombreZona</option>
+                            }
+                        </InputSelect>
+                    }
+                    <ValidationMessage For="@(() => evento.ZonaId)" />
+                </div>
+            </div>
+        }
+
+
+        @if (evento.ContratoId != null) //si esta cargado el contrato dejo cargar certificado
+        {
+            <div class="form-group row p-2">
+                <label class="col-form-label">Certificado</label>
+                <div class="col">
+                    @if (certificados != null)
+                    {
+                        <InputSelect @bind-Value="evento.CertificadoId" class="form-control">
+                            <option selected value="">Seleccione Certificado</option>
+                            @foreach (var certificado in certificados)
+                            {
+                                <option value="@certificado.Id">@certificado.Periodo</option>
+                            }
+                        </InputSelect>
+                    }
+                    <ValidationMessage For="@(() => evento.CertificadoId)" />
+                </div>
+            </div>
+        }
+
+        @if (evento.ZonaId != null) //si esta cargada la zona dejo cargar frente
+        {
+            <div class="form-group row p-2">
+                <label class="col-form-label">Frente Obra</label>
+                <div class="col">
+                    @if (fobras != null)
+                    {
+                        <InputSelect @bind-Value="evento.FrenteObraId" class="form-control">
+                            <option selected value="">Seleccione Frente Obra</option>
+                            @foreach (var fobra in fobras)
+                            {
+                                <option value="@fobra.Id">@fobra.CodFrenteObra - @fobra.NombreFrenteObra</option>
+                            }
+                        </InputSelect>
+                    }
+                    <ValidationMessage For="@(() => evento.FrenteObraId)" />
+                </div>
+            </div>
+        }
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Latitud</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="evento.Latitud" placeholder="Latitud" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => evento.Latitud)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Longitud</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="evento.Longitud" placeholder="Longitud" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => evento.Longitud)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <div class="col">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" @onclick="ObtenerUbicacion"><i class="oi oi-map-marker"></i> Obtener ubicación</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> @TextBotonSubmit</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+@code {
+    [Parameter] public EventoDTO evento { get; set; } = new EventoDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    IEnumerable<ZonaDTO> zonas = new List<ZonaDTO>();
+    IEnumerable<EmpresaDTO> empresas = new List<EmpresaDTO>();
+    IEnumerable<EventoTipoDTO> tipos = new List<EventoTipoDTO>();
+    IEnumerable<FrenteObraDTO> fobras = new List<FrenteObraDTO>();
+    IEnumerable<CertificadoDTO> certificados = new List<CertificadoDTO>();
+    IEnumerable<ContratoDTO> contratos = new List<ContratoDTO>();
+
+    bool ocultaContrato { get; set; } = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        zonas = await ZonaService.GetFull();
+        empresas = await EmpresaService.GetFull();
+        tipos = await TipoService.GetFull();
+        contratos = await ContratoService.GetFull();
+
+        if (evento.ContratoId.HasValue)
+        {
+            certificados = await CertificadoService.GetFull(evento.ContratoId.Value);
+
+            ContratoDTO contrato = await ContratoService.Get(evento.ContratoId.Value);
+            evento.EmpresaId = contrato.EmpresaId;
+            evento.ZonaId = contrato.ZonaId;
+
+            fobras = await FrenteService.GetFull(evento.ZonaId.Value);
+        }
+
+        await CargaFrenteObra();
+        await JS.InvokeVoidAsync("getLocation");
+    }
+
+    async Task ObtenerUbicacion()
+    {
+        CultureInfo cultura = new CultureInfo("en-US");
+
+        evento.Latitud = Convert.ToDouble(await JS.InvokeAsync<string>("getLatitud"), cultura);
+        evento.Longitud = Convert.ToDouble(await JS.InvokeAsync<string>("getLongitud"), cultura);
+    }
+
+
+    async Task ValidaContrato()
+    {
+        if (evento.ContratoId.HasValue)
+        {
+            certificados = await CertificadoService.GetFull(evento.ContratoId.Value);
+
+            ContratoDTO contrato = await ContratoService.Get(evento.ContratoId.Value);
+            evento.EmpresaId = contrato.EmpresaId;
+            evento.ZonaId = contrato.ZonaId;
+
+            fobras = await FrenteService.GetFull(evento.ZonaId.Value);
+        }
+        else
+        {
+            certificados = new List<CertificadoDTO>();
+            fobras = new List<FrenteObraDTO>();
+
+            evento.EmpresaId = null;
+            evento.ZonaId = null;
+        }
+    }
+
+    async Task CargaFrenteObra()
+    {
+        if (evento.ZonaId.HasValue)
+        {
+            fobras = await FrenteService.GetFull(evento.ZonaId.Value);
+        }
+    }
+
+}

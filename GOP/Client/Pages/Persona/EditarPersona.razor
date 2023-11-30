@@ -1,0 +1,47 @@
+﻿@page "/persona/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject PersonaService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Persona</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i>
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormPersona persona="@persona" TextBotonSubmit="Guardar" OnValidSubmit="@PersonaEdit"/>
+    </div>
+</div>
+
+@code {
+    public PersonaDTO persona = new PersonaDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        persona = await Service.Get(id);
+    }
+
+    async Task PersonaEdit()
+    {
+        var respuesta = await Service.Put(persona);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/personas");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar persona: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/personas");
+    }
+}

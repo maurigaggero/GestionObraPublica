@@ -1,0 +1,123 @@
+﻿@page "/reportes"
+@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject UserService UserService
+@inject IJSRuntime JS
+
+<style>
+    .card {
+        cursor: pointer;
+    }
+
+    .zoom {
+        border-radius: 1rem;
+        transition: transform .2s
+    }
+
+        .zoom:hover {
+            transform: scale(1.02);
+            box-shadow: 1px 8px 20px grey;
+            -webkit-transition: box-shadow .6s ease-in;
+        }
+</style>
+
+
+<div class="mb-2"><h5>Reportes</h5></div>
+
+
+<div class="card-columns">
+    <a @onclick="ReporteContrato" hidden="@contrato">
+        <div class="card zoom mb-3 mt-3">
+            <div class="card-body" style="z-index:3">
+                <h5 class="card-title">Items por Periodo por Contrato</h5>
+                @if (Reporte == "contrato")
+                {
+                    <GrillaContratos></GrillaContratos>
+                }
+            </div>
+        </div>
+    </a>
+
+    <a @onclick="ReporteZona" hidden="@zona">
+        <div class="card zoom mb-3 mt-3">
+            <div class="card-body" style="z-index:3">
+                <h5 class="card-title">Items por Zona</h5>
+                @if (Reporte == "zona")
+                {
+                    <GrillaItemsPorZona></GrillaItemsPorZona>
+                }
+            </div>
+        </div>
+    </a>
+
+    <a @onclick="ReporteEstructura" hidden="@estructura">
+        <div class="card zoom mb-3 mt-3">
+            <div class="card-body" style="z-index:3">
+                <h5 class="card-title">Items por Estructura</h5>
+                @if (Reporte == "estructura")
+                {
+                    <GrillaEstructuras></GrillaEstructuras>
+                }
+            </div>
+        </div>
+    </a>
+
+    <a @onclick="ReporteFrente" hidden="@frente">
+        <div class="card zoom mb-3 mt-3">
+            <div class="card-body" style="z-index:3">
+                <h5 class="card-title">Items por Frente</h5>
+                @if (Reporte == "frente")
+                {
+                    <GrillaItemsPorFrente></GrillaItemsPorFrente>
+                }
+            </div>
+        </div>
+    </a>
+
+</div>
+
+
+@code {
+    public string Reporte { get; set; }
+
+    public bool contrato { get; set; }
+    public bool zona { get; set; }
+    public bool frente { get; set; }
+    public bool estructura { get; set; }
+
+    void ReporteContrato()
+    {
+        Reporte = "contrato";
+
+        zona = !zona;
+        frente = !frente;
+        estructura = !estructura;
+    }
+
+    void ReporteZona()
+    {
+        Reporte = "zona";
+
+        contrato = !contrato;
+        frente = !frente;
+        estructura = !estructura;
+    }
+
+    void ReporteFrente()
+    {
+        Reporte = "frente";
+
+        contrato = !contrato;
+        zona = !zona;
+        estructura = !estructura;
+    }
+
+    void ReporteEstructura()
+    {
+        Reporte = "estructura";
+
+        contrato = !contrato;
+        zona = !zona;
+        frente = !frente;
+    }
+}

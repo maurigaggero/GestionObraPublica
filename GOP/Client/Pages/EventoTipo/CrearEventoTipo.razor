@@ -1,0 +1,50 @@
+﻿@page "/eventotipo/crear"
+@inject NavigationManager NavigationManager
+@inject EventoTipoService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear tipo evento</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEventoTipo evento="@evento" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoEvento" />
+    </div>
+</div>
+
+@code {
+    public EventoTipoDTO evento = new EventoTipoDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task NuevoEvento()
+    {
+        var respuesta = await Service.Post(evento);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var content = await respuesta.Content.ReadAsStringAsync();
+            var id = JsonConvert.DeserializeObject<int>(content);
+            var obj = await Service.Get(id);
+            NavigationManager.NavigateTo("/tipoeventos");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear evento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/tipoeventos");
+    }
+}

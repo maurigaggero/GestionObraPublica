@@ -1,0 +1,157 @@
+﻿@page "/frentesobraprofesionales/{fObraId:int}"
+@inject NavigationManager NavigationManager
+@inject FrenteObraProfesionalesService Service
+@inject FrentesObraService FrenteObraService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    @if (frenteObra != null)
+    {
+        <h5>Profesionales del Frente de Obra: @frenteObra.NombreFrenteObra</h5>
+        <div>
+            <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i> Atrás
+            </button>
+            <a href="frenteobraprofesional/crear/@frenteObra.Id" class="btn btn-sm btn-success">
+                <i class="oi oi-plus"></i>
+            </a>
+        </div>
+    }
+</div>
+
+
+@if (frentesObraProfesionales == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (frentesObraProfesionales.Count() == 0)
+{
+    <p>No se encontraron profesionales.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Persona</th>
+                <th>Descripcion Funcion</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var fObraProfesional in frentesObraProfesionales)
+            {
+                <tr>
+                    <td>@fObraProfesional.Persona.Apellido, @fObraProfesional.Persona.Nombre</td>
+                    <td>@fObraProfesional.DescFuncProf</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-warning m-1" href="frenteobraprofesional/editar/@fObraProfesional.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+                        <button @onclick="@(() => BorrarProfesional(fObraProfesional.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+        @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public IEnumerable<FrenteObraProfesionalDTO> frentesObraProfesionales { get; set; }
+    public IEnumerable<FrenteObraProfesionalDTO> frentesObraProfesionalesPag { get; set; }
+
+    public FrenteObraDTO frenteObra { get; set; }
+
+    [Parameter] public int fObraId { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetFObraProfesionales();
+        await Paginar(false);
+    }
+
+    private async Task BorrarProfesional(int id)
+    {
+        var fObraProfesional = await Service.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar profesional {fObraProfesional.Persona.Nombre} {fObraProfesional.Persona.Apellido}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await Service.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Profesional eliminado", "success");
+                await GetFObraProfesionales();
+                await Paginar(false);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar profesional", "error");
+            }
+        }
+    }
+
+    private async Task GetFObraProfesionales()
+    {
+        frenteObra = await FrenteObraService.Get(fObraId);
+
+        frentesObraProfesionales = frenteObra.Profesionales;
+        frentesObraProfesionalesPag = frentesObraProfesionales;
+    }
+
+    async Task Paginar(bool next)
+    {
+        frentesObraProfesionales = frentesObraProfesionalesPag;
+        int cantidadPorPagina = 10;
+        registros = frentesObraProfesionales.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        frentesObraProfesionales = frentesObraProfesionales.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/frentesobra/{frenteObra.ZonaId}");
+    }
+}

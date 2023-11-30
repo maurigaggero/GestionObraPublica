@@ -1,0 +1,305 @@
+﻿@inject CertificadoItemsService Service
+@inject CertificadoService CertificadoService
+@inject ContratoItemService ItemService
+@inject FrentesObraService FrenteObraService
+@inject ContratoEstructuraService EstructuraService
+@inject UserService UserService
+@inject UnidadesService UnidadService
+@inject IJSRuntime JS
+
+
+<EditForm Model="@certificadoItem" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Certificado</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="certificadoItem.CertificadoId" placeholder="ID de Contrato" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificadoItem.CertificadoId)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2" hidden="@edit">
+            <label class="col-form-label">Item</label>
+            <div class="col">
+                <InputSelect @bind-Value="certificadoItem.ItemContratoId" @onfocusout="CargaDatosItem" class="form-control">
+                    <option selected value="">Seleccione Item</option>
+                    @foreach (var item in items)
+                    {
+                        <option value="@item.Id">@item.CodItem - @item.DescItem (@item.Item.Unidad.CodUnidad)</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => certificadoItem.ItemContratoId)" />
+            </div>
+        </div>
+
+
+        @if (certificadoItem != null && !edit)
+        {
+            <div class="p-2">
+                <dt>Total: @certificadoItem.CantidadTotal - Coef.: @certificadoItem.Coeficiente</dt>
+            </div>
+        }
+
+        @if (certificadoItem != null && edit)
+        {
+            <div class="p-2">
+                @if (certificadoItem.Unidad != null)
+                {
+                    <dt>
+                        @certificadoItem.Certificado.Periodo.Substring(0,2)
+                        /@certificadoItem.Certificado.Periodo.Substring(2)
+                    </dt>
+                    <dt>
+                        Item:
+                        @certificadoItem.CodItem
+                        - @certificadoItem.DescItem
+                        (@certificadoItem.Unidad.CodUnidad)
+                    </dt>
+                }
+                <dt>
+                    Total: @certificadoItem.CantidadTotal
+                    -
+                    Coef.: @certificadoItem.Coeficiente
+                </dt>
+                @if (certificadoItem.FrenteObra != null
+               && FlagMenu == EnumMenu.Certificado)
+                {
+                    <dt>
+                        Frente Obra:
+                        @certificadoItem.FrenteObra.CodFrenteObra
+                        -
+                        @certificadoItem.FrenteObra.NombreFrenteObra
+                    </dt>
+                }
+
+                @if (certificadoItem.ContratoEstructura != null
+               && FlagMenu == EnumMenu.Certificado)
+                {
+                    <dt>
+                        Estructura:
+                        @certificadoItem.ContratoEstructura.CodEstructura
+                        -
+                        @certificadoItem.ContratoEstructura.DescEstructura
+                    </dt>
+                }
+            </div>
+        }
+
+        <div class="form-group row p-2" hidden="@EsHidden()">
+            <label class="col-form-label">Frente Obra</label>
+            <div class="col">
+                <InputSelect @bind-Value="certificadoItem.FrenteObraId" class="form-control">
+                    <option selected value="">Seleccione Frente Obra</option>
+                    @foreach (var item in fobras)
+                    {
+                        <option value="@item.Id">@item.CodFrenteObra - @item.NombreFrenteObra</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => certificadoItem.FrenteObraId)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden="@EsHidden()">
+            <label class="col-form-label">Tipo</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetEstructuras"
+                                   ConvertMethod="ConvertEstructuras"
+                                   @bind-Value="certificadoItem.ContratoEstructuraId"
+                                   placeholder="Buscar Estructura">
+                    <SelectedTemplate Context="estructuraId">
+                        @{
+                            var selected = EstructuraSeleccionada(estructuraId);
+
+                            <text>@selected?.DescEstructura</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="estructura">
+                        @estructura.DescEstructura
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => certificadoItem.ContratoEstructuraId)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Fecha Medicion</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputDate @bind-Value="certificadoItem.FechaMedicion" placeholder="Fecha de medicion del item" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificadoItem.FechaMedicion)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Medido</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="certificadoItem.CantidadMedida" placeholder="Cantidad Total" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificadoItem.CantidadMedida)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Informado</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="certificadoItem.CantidadInformada" placeholder="Cantidad Total" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificadoItem.CantidadInformada)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Estado</label>
+            <div class="col">
+                <InputSelect @bind-Value="certificadoItem.Estado" class="form-control">
+                    @foreach (var tipo in Enum.GetValues(typeof(EnumEstadoCertificacion)))
+                    {
+                        <option value="@tipo">@tipo</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => certificadoItem.Estado)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Observaciones</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputTextArea @bind-Value="certificadoItem.Obs" placeholder="Observaciones" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificadoItem.Obs)" />
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> Guardar</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public CertificadoItemDTO certificadoItem { get; set; } = new CertificadoItemDTO();
+    [Parameter] public CertificadoDTO certificado { get; set; } = new CertificadoDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public bool edit { get; set; }
+
+    IEnumerable<ContratoItemDTO> items = new List<ContratoItemDTO>();
+    IEnumerable<FrenteObraDTO> fobras = new List<FrenteObraDTO>();
+    IEnumerable<ContratoEstructuraDTO> estructuras = new List<ContratoEstructuraDTO>();
+    IEnumerable<UnidadDTO> unidades = new List<UnidadDTO>();
+
+    private EnumMenu FlagMenu { get; set; } = EnumMenu.Nada;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await UserService.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            if (authState.User.Claims.Any(x => x.Value.ToUpper() == "HYS"))
+            {
+                FlagMenu = EnumMenu.Evento;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "FRENTE"))
+            {
+                FlagMenu = EnumMenu.Certificado;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "ZONA1"
+                                                || x.Value.ToUpper() == "ZONA2"))
+            {
+                FlagMenu = EnumMenu.Contrato;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "BASEDATOS"))
+            {
+                FlagMenu = EnumMenu.Admin;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "ADMIN"))
+            {
+                FlagMenu = EnumMenu.Admin;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1"))
+            {
+                FlagMenu = EnumMenu.Consulta1;
+            }
+            else if (authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA2"))
+            {
+                FlagMenu = EnumMenu.Consulta2;
+            }
+        }
+    }
+
+    private async Task<IEnumerable<ContratoEstructuraDTO>> GetEstructuras(string searchText)
+    {
+        var obj = await Task.FromResult(estructuras.Where(x =>
+                                                          (x.DescEstructura.ToUpper().Contains(searchText.ToUpper())
+                                                          && x.ContratoId == certificado.ContratoId
+                                                         ))
+                                                   .ToList());
+        return obj;
+    }
+
+    private int? ConvertEstructuras(ContratoEstructuraDTO obj)
+    {
+        return obj?.Id;
+    }
+
+    private ContratoEstructuraDTO EstructuraSeleccionada(int? id)
+    {
+        return estructuras.FirstOrDefault(p => p.Id == id);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        CargaDatosItem();
+
+        if (certificado.Contrato != null)
+            fobras = await FrenteObraService.GetFull(certificado.Contrato.ZonaId.Value);
+
+        items = await ItemService.GetFull(certificado.ContratoId);
+        estructuras = await EstructuraService.GetFull(certificado.ContratoId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    async Task CargaDatosItem()
+    {
+        certificadoItem.ItemContrato = await ItemService.Get(certificadoItem.ItemContratoId);
+        certificadoItem.CodItem = certificadoItem.ItemContrato.CodItem;
+        certificadoItem.DescItem = certificadoItem.ItemContrato.DescItem;
+
+        if (certificadoItem.ItemContrato.Item != null)
+            certificadoItem.UnidadId = certificadoItem.ItemContrato.Item.UnidadId.Value;
+
+        certificadoItem.Coeficiente = certificadoItem.ItemContrato.Coeficiente;
+        certificadoItem.CantidadTotal = certificadoItem.ItemContrato.CantidadTotal;
+    }
+
+    private bool EsHidden()
+    {
+        bool resp = edit;
+        if (resp)
+        {
+            if (FlagMenu == EnumMenu.Contrato || FlagMenu == EnumMenu.Admin)
+            {
+                resp = false;
+            }
+        }
+        return resp;
+    }
+}

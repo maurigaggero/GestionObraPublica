@@ -1,0 +1,130 @@
+﻿@page "/contratoitemscontroles/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoItemService ContratoItemsService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    @if (itemContrato != null && itemContrato.Contrato != null)
+    {
+        <h5> Controles del item: @itemContrato.DescItem del contrato: @itemContrato.Contrato.Descripcion </h5>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+
+@if (controles == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (controles.Count() == 0)
+{
+    <p>No se encontraron controles.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Codigo-Descripcion</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var control in controles)
+            {
+                <tr>
+                    <td>@control.CodControl-@control.DescControl</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-info m-1" href="/contratoitemscontrolparams/@control.Id" data-toggle="tooltip" data-placement="bottom" title="Parametros">Parametros</a>
+                        <a class="btn btn-sm btn-outline-success m-1" href="/contratoitemscontroldocs/@control.Id" data-toggle="tooltip" data-placement="bottom" title="Documentos">Documentos</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+        @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public ContratoItemDTO itemContrato = new ContratoItemDTO();
+
+    [Parameter] public int id { get; set; }
+
+    public IEnumerable<ContratoItemControlDTO> controles { get; set; }
+    public IEnumerable<ContratoItemControlDTO> controlesPag { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetItemContrato();
+        await GetControles();
+        await Paginar(false);
+    }
+
+    private async Task GetItemContrato()
+    {
+        itemContrato = await ContratoItemsService.Get(id);
+    }
+
+    private async Task GetControles()
+    {
+        controles = itemContrato.ContratoItemControls;
+        controlesPag = controles;
+    }
+
+    async Task Paginar(bool next)
+    {
+        controles = controlesPag;
+        int cantidadPorPagina = 10;
+        registros = controles.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        controles = controles.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/contratoitems/{itemContrato.ContratoId}");
+    }
+}

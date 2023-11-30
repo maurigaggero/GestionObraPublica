@@ -1,0 +1,96 @@
+﻿@page "/contrato/mediciones/{id:int}"
+@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject ContratoItemService ContratoItemService
+@inject IJSRuntime JS
+
+<div class="m-2">
+    <div class="d-flex justify-content-end mb-1" id="header">
+        <div>
+            <button class="btn btn-sm btn-primary" @onclick="Descargar">
+                <i class="oi oi-document"></i>Descargar mediciones
+            </button>
+            <a href="contratos" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div id="medicionesItemContrato">
+        <div class="d-flex justify-content-between mb-1" id="header">
+            <h5>Mediciones de items contrato</h5>
+        </div>
+
+        <div>
+            <dl class="dl-horizontal">
+                @if (contrato != null && contrato.Empresa != null)
+                {
+                    <dt>Expediente - Caratula - Empresa</dt>
+                    <dd>
+                        @contrato.NumExpediente -
+                        @contrato.Caratula -
+                        @contrato.Empresa.Nombre
+                    </dd>
+                }
+            </dl>
+        </div>
+
+        <div class="mt-1">
+            @if (items == null)
+            {
+                <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+                    <div class="spinner-grow" role="status"></div>
+                </div>
+            }
+            else if (items.Count() == 0)
+            {
+                <p>No se encontraron items para el contrato especificado.</p>
+            }
+            else
+            {
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            <tr>
+                                <td>@item.CodItem - @item.DescItem</td>
+                                <td>@item.CantidadTotal</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+</div>
+
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    public ContratoDTO contrato { get; set; } = new ContratoDTO();
+
+    public IEnumerable<ContratoItemDTO> items { get; set; } = new List<ContratoItemDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        contrato = await Service.GetNoFull(id);
+        items = await ContratoItemService.GetFull(id);
+    }
+
+    async Task Descargar()
+    {
+        await JS.InvokeVoidAsync("generarPdf",
+        "medicionesItemContrato",
+        $"Listado_Mediciones_Contrato_{contrato.Id}",
+        "portrait");
+    }
+}

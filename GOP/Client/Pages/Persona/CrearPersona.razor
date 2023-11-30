@@ -1,0 +1,47 @@
+﻿@page "/persona/crear"
+@inject NavigationManager NavigationManager
+@inject PersonaService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear persona</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i>
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormPersona persona="@persona" TextBotonSubmit="Guardar" OnValidSubmit="@NuevaPersona" />
+    </div>
+</div>
+
+@code {
+    public PersonaDTO persona = new PersonaDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task NuevaPersona()
+    {
+        var respuesta = await Service.Post(persona);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/personas");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear persona: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/personas");
+    }
+}

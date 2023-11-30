@@ -1,0 +1,341 @@
+﻿@inject CalleService CalleService
+@inject EstructuraService EstructuraService
+@inject IJSRuntime JS
+
+<EditForm Model="@cEstructura" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Contrato</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="cEstructura.ContratoId" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => cEstructura.ContratoId)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Código</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="cEstructura.CodEstructura" placeholder="Código de Estructura" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => cEstructura.CodEstructura)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputTextArea @bind-Value="cEstructura.DescEstructura" placeholder="Descripción de Estructura" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => cEstructura.DescEstructura)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Tipo</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetEstructuras"
+                                   ConvertMethod="ConvertEstructuras"
+                                   @bind-Value="cEstructura.EstructuraTipoId"
+                                   placeholder="Buscar Tipo">
+                    <SelectedTemplate Context="estructuraId">
+                        @{
+                            var selected = EstructuraSeleccionada(estructuraId);
+
+                            <text>@selected?.DescTipo</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="estructura">
+                        @estructura.DescTipo
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => cEstructura.EstructuraTipoId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaEstructura" data-toggle="tooltip" data-placement="left" title="Si la estructura no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Calle</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetCalles"
+                                   ConvertMethod="ConvertCalles"
+                                   @bind-Value="cEstructura.CalleId"
+                                   placeholder="Buscar Calle">
+                    <SelectedTemplate Context="calleId">
+                        @{
+                            var selected = CalleSeleccionada(calleId);
+
+                            <text>@selected?.NombreCalle</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="calle">
+                        @calle.NombreCalle
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => cEstructura.CalleId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaCalle" data-toggle="tooltip" data-placement="left" title="Si la calle no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+         <div class="form-group row p-2">
+            <label class="col-form-label">Entre</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetCalles"
+                                   ConvertMethod="ConvertCalles"
+                                   @bind-Value="cEstructura.EntreCalleId"
+                                   placeholder="Buscar Calle">
+                    <SelectedTemplate Context="calleId">
+                        @{
+                            var selected = CalleSeleccionada(calleId);
+
+                            <text>@selected?.NombreCalle</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="calle">
+                        @calle.NombreCalle
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => cEstructura.EntreCalleId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaCalle" data-toggle="tooltip" data-placement="left" title="Si la calle no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Y</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetCalles"
+                                   ConvertMethod="ConvertCalles"
+                                   @bind-Value="cEstructura.YCalleId"
+                                   placeholder="Buscar Calle">
+                    <SelectedTemplate Context="calleId">
+                        @{
+                            var selected = CalleSeleccionada(calleId);
+
+                            <text>@selected?.NombreCalle</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="calle">
+                        @calle.NombreCalle
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => cEstructura.YCalleId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaCalle" data-toggle="tooltip" data-placement="left" title="Si la calle no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Esquina</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetCalles"
+                                   ConvertMethod="ConvertCalles"
+                                   @bind-Value="cEstructura.EsquinaCalleId"
+                                   placeholder="Buscar Calle">
+                    <SelectedTemplate Context="calleId">
+                        @{
+                            var selected = CalleSeleccionada(calleId);
+
+                            <text>@selected?.NombreCalle</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="calle">
+                        @calle.NombreCalle
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => cEstructura.EsquinaCalleId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaCalle" data-toggle="tooltip" data-placement="left" title="Si la calle no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Longitud</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="cEstructura.Longitud" placeholder="Longitud de Estructura" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => cEstructura.Longitud)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Ancho</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="cEstructura.Ancho" placeholder="Descripción de Estructura" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => cEstructura.Ancho)" />
+            </div>
+        </div>
+
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+<!--Modal Estructuras-->
+<div class="modal fade" id="modalCrearEstructuras" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Estructura</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.EstructuraTipo.FormEstructura TextBotonSubmit="Guardar" OnValidSubmit="CrearEstructura" estructura="estructura"></GOP.Client.Pages.EstructuraTipo.FormEstructura>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Modal Calles-->
+<div class="modal fade" id="modalCrearCalle" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Calle</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.Calle.FormCalle TextBotonSubmit="Guardar" OnValidSubmit="CrearCalle" calle="calle"></GOP.Client.Pages.Calle.FormCalle>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public ContratoEstructuraDTO cEstructura { get; set; } = new ContratoEstructuraDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    ContratoDTO contrato = new ContratoDTO();
+
+
+    IEnumerable<CalleDTO> calles = new List<CalleDTO>();
+
+    CalleDTO calle = new CalleDTO();
+
+    IEnumerable<EstructuraTipoDTO> estructuras = new List<EstructuraTipoDTO>();
+
+    EstructuraTipoDTO estructura = new EstructuraTipoDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        calles = await CalleService.GetFull();
+        estructuras = await EstructuraService.GetFull();
+    }
+
+    private async Task<IEnumerable<CalleDTO>> GetCalles(string searchText)
+    {
+        var nombre = await Task.FromResult(calles.Where(x => x.NombreCalle.ToUpper().Contains(searchText.ToUpper())).ToList());
+        return nombre;
+    }
+
+    private int? ConvertCalles(CalleDTO obj)
+    {
+        return obj?.Id;
+    }
+
+    private CalleDTO CalleSeleccionada(int? id)
+    {
+        return calles.FirstOrDefault(p => p.Id == id);
+    }
+
+    async Task CrearCalle()
+    {
+        var respuesta = await CalleService.Post(calle);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearCalle");
+            calles = await CalleService.GetFull();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear calle: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void NuevaCalle()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearCalle");
+    }
+
+    private async Task<IEnumerable<EstructuraTipoDTO>> GetEstructuras(string searchText)
+    {
+        var obj = await Task.FromResult(estructuras.Where(x => x.DescTipo.ToUpper().Contains(searchText.ToUpper())).ToList());
+        return obj;
+    }
+
+    private int? ConvertEstructuras(EstructuraTipoDTO obj)
+    {
+        return obj?.Id;
+    }
+
+    private EstructuraTipoDTO EstructuraSeleccionada(int? id)
+    {
+        return estructuras.FirstOrDefault(p => p.Id == id);
+    }
+
+    async Task CrearEstructura()
+    {
+        var respuesta = await EstructuraService.Post(estructura);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearEstructuras");
+            estructuras = await EstructuraService.GetFull();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear estructura: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void NuevaEstructura()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearEstructuras");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+}

@@ -1,0 +1,150 @@
+﻿@page "/certificadoitemcontrol/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoItemControlsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (certificadoItemControl != null && certificadoItemControl.CertificadoItem != null)
+    {
+        <h5>Item: @certificadoItemControl.CertificadoItem.DescItem</h5>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i>
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <EditForm Model="@certificadoItemControl" OnValidSubmit="@Editar">
+
+            @if (certificadoItemControl != null)
+            {
+                <div class="p-2">
+                    <dt>@certificadoItemControl.DescControl</dt>
+                </div>
+            }
+
+            <div class="form-group row p-2">
+                <label class="col-form-label">Fecha Control</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputDate @bind-Value="certificadoItemControl.FechaControl" placeholder="Aceptado" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControl.FechaControl)" />
+                </div>
+            </div>
+
+            <div class="form-group row p-2">
+                <label class="col-form-label">Estado</label>
+                <div class="col">
+                    <InputSelect @bind-Value="certificadoItemControl.Estado" class="form-control">
+                        @foreach (var tipo in Enum.GetValues(typeof(EnumEstadoControl)))
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => certificadoItemControl.Estado)" />
+                </div>
+            </div>
+
+@*            <div class="form-group row p-2">
+                <label class="col-form-label">Estado</label>
+                <div class="col">
+                    <InputSelect @bind-Value="certificadoItemControl.Estado" class="form-control">
+                        @foreach (var tipo in Enum.GetValues(typeof(EnumEstadoCertificacion)))
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => certificadoItemControl.Estado)" />
+                </div>
+            </div>
+*@
+            <div class="form-group row p-2">
+                <label class="col-form-label">Observaciones</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputTextArea @bind-Value="certificadoItemControl.Obs" placeholder="Observaciones" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControl.Obs)" />
+                </div>
+            </div>
+
+
+            <div class="form-group row p-2" hidden>
+                <label class="col-form-label">Certificado Item</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputNumber @bind-Value="certificadoItemControl.CertificadoItemId" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControl.CertificadoItemId)" />
+                </div>
+            </div>
+
+            <div class="form-group row p-2" hidden>
+                <label class="col-form-label">Contrato Item Control</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputNumber @bind-Value="@certificadoItemControl.ContratoItemControlId" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControl.ContratoItemControlId)" />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-block btn-success">
+                    <i class="oi oi-check "></i>
+                    <text style="color:white"> Guardar</text>
+                </button>
+            </div>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+</div>
+
+
+@code {
+    public CertificadoItemControlDTO certificadoItemControl = new CertificadoItemControlDTO();
+
+    [Parameter] public int id { get; set; }
+
+    IEnumerable<UnidadDTO> unidades = new List<UnidadDTO>();
+
+    UnidadDTO unidad = new UnidadDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        certificadoItemControl = await Service.Get(id);
+
+        if (certificadoItemControl.FechaControl == DateTime.MinValue)
+        {
+            certificadoItemControl.FechaControl = DateTime.Now;
+        }
+    }
+
+
+    async Task Editar()
+    {
+        var respuesta = await Service.Put(certificadoItemControl);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificadoitemcontroles/{certificadoItemControl.CertificadoItemId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar control: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificadoitems/{certificadoItemControl.CertificadoItem.CertificadoId}");
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+}

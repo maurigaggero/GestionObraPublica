@@ -1,0 +1,49 @@
+﻿@page "/frenteobraprofesional/crear/{fObra:int}"
+@inject NavigationManager NavigationManager
+@inject FrenteObraProfesionalesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Agregar profesional a Frente de Obra</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormFrenteObraProfesional frenteObraProfesional="@frenteObraProfesional" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoProfesionalFO" />
+    </div>
+</div>
+
+@code {
+    public FrenteObraProfesionalDTO frenteObraProfesional { get; set; } = new FrenteObraProfesionalDTO();
+
+    [Parameter] public int fObra { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        frenteObraProfesional.FrenteObraId = fObra;
+    }
+
+    async Task NuevoProfesionalFO()
+    {
+        var respuesta = await Service.Post(frenteObraProfesional);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/frentesobraprofesionales/{fObra}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear profesional: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/frentesobraprofesionales/{fObra}");
+    }
+}

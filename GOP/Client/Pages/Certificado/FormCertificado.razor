@@ -1,0 +1,136 @@
+﻿@inject CertificadoService Service
+@inject ZonaProfesionalesService ZonaService
+@inject EmpresaProfesionalesService EmpresaService
+@inject IJSRuntime JS
+
+<EditForm Model="@certificado" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Contrato</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="certificado.ContratoId" placeholder="Contrato del Certificado" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificado.ContratoId)" />
+            </div>
+        </div>
+
+        @if (certificado.Contrato != null)
+        {
+            <dt>Contrato del Certificado: </dt>
+            <dd>@certificado.Contrato.Caratula - @certificado.Contrato.NumExpediente</dd>
+        }
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Periodo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText id="mascaraPeriodo" @bind-Value="certificado.Periodo" placeholder="MMYYYY" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificado.Periodo)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Fecha</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputDate @bind-Value="certificado.FechaCertificado" placeholder="Fecha del certificado" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificado.FechaCertificado)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Estado</label>
+            <div class="col">
+                <InputSelect @bind-Value="certificado.Estado" class="form-control">
+                    @foreach (var tipo in Enum.GetValues(typeof(EnumEstadoCertificacion)))
+                    {
+                        <option value="@tipo">@tipo</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => certificado.Estado)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            @*<label class="col-form-label">Empresas</label>*@
+            <div class="col">
+                <InputSelect @bind-Value="certificado.EmpresaProfesionalId" class="form-control">
+                    <option selected value="">Seleccione profesional de la Empresa</option>
+                    @foreach (var item in empresas)
+                    {
+                        <option value="@item.Id">@item.Persona.Apellido, @item.Persona.Nombre</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => certificado.EmpresaProfesionalId)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            @*<label class="col-form-label">Zonas</label>*@
+            <div class="col">
+                <InputSelect @bind-Value="certificado.ZonaProfesionalId" class="form-control">
+                    <option selected value="">Seleccione profesional de la Zona</option>
+                    @foreach (var item in zonas)
+                    {
+                        <option value="@item.Id">@item.Zona.CodigoZona - @item.Persona.Apellido, @item.Persona.Nombre</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => certificado.ZonaProfesionalId)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Observaciones</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputTextArea @bind-Value="certificado.Obs" placeholder="Observaciones del certificado" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => certificado.Obs)" />
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> @TextBotonSubmit</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+@code {
+    [Parameter] public CertificadoDTO certificado { get; set; } = new CertificadoDTO();
+    [Parameter] public ContratoDTO contrato { get; set; } = new ContratoDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    IEnumerable<ZonaProfesionalDTO> zonas = new List<ZonaProfesionalDTO>();
+    IEnumerable<EmpresaProfesionalDTO> empresas = new List<EmpresaProfesionalDTO>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (contrato.ZonaId != null)
+        {
+            zonas = await ZonaService.GetFull(contrato.ZonaId.Value);
+        }
+        if (contrato.EmpresaId != null)
+        {
+            empresas = await EmpresaService.GetFull(contrato.EmpresaId.Value);
+        }
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+        await JS.InvokeVoidAsync("mascaraPeriodo");
+    }
+
+}

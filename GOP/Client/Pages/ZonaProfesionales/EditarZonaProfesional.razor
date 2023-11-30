@@ -1,0 +1,50 @@
+﻿@page "/zonaprofesional/editar/{zona:int}"
+@inject NavigationManager NavigationManager
+@inject ZonaProfesionalesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (zonaProfesional.Zona != null)
+    {
+        <h4><b>Editar Profesional de la Zona: @zonaProfesional.Zona.NombreZona</b></h4>
+        <div>
+            <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i> Atrás
+            </button>
+        </div>
+    }
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormZonaProfesional zonaProfesional="@zonaProfesional" TextBotonSubmit="Guardar" OnValidSubmit="@EditItems" />
+    </div>
+</div>
+
+@code {
+    public ZonaProfesionalDTO zonaProfesional = new ZonaProfesionalDTO();
+
+    [Parameter] public int zona { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        zonaProfesional = await Service.Get(zona);
+    }
+
+    async Task EditItems()
+    {
+        var respuesta = await Service.Put(zonaProfesional);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/zonaprofesionales/{zonaProfesional.ZonaId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar profesional:{respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/zonaprofesionales/{zonaProfesional.ZonaId}");
+    }
+}

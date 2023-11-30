@@ -1,0 +1,49 @@
+﻿@page "/eventodocs/crear/{evento:int}"
+@inject NavigationManager NavigationManager
+@inject EventoDocsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Documento de Evento</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEventoDocs eventoDocs="@eventoDocs" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoEventoDoc" ocultaCarga="false" />
+    </div>
+</div>
+
+@code {
+    public EventoDocDTO eventoDocs = new EventoDocDTO();
+
+    [Parameter] public int evento { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        eventoDocs.EventoId = evento;
+    }
+
+    async Task NuevoEventoDoc()
+    {
+        var respuesta = await Service.Post(eventoDocs);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/eventodocs/{evento}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear documento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/eventodocs/{evento}");
+    }
+}

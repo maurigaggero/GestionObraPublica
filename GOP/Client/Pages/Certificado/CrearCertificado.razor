@@ -1,0 +1,54 @@
+﻿@page "/certificado/crear/{contratoId:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoService Service
+@inject ContratoService ContratoService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear certificado</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormCertificado certificado="@certificado" contrato="contrato" TextBotonSubmit="Guardar" OnValidSubmit="@Nuevo" />
+    </div>
+</div>
+
+@code {
+    public CertificadoDTO certificado = new CertificadoDTO();
+
+    public ContratoDTO contrato = new ContratoDTO();
+
+    [Parameter] public int contratoId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        certificado.ContratoId = contratoId;
+        certificado.FechaCertificado = DateTime.Now;
+        contrato = await ContratoService.GetNoFull(contratoId);
+    }
+
+    async Task Nuevo()
+    {
+        var respuesta = await Service.Post(certificado);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificados/{contratoId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear certificado: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificados/{contratoId}");
+    }
+}

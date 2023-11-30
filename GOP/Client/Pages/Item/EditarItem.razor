@@ -1,0 +1,47 @@
+﻿@page "/item/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ItemsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Item</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItem item="@item" TextBotonSubmit="Guardar" OnValidSubmit="@EditItems"/>
+    </div>
+</div>
+
+@code {
+    public ItemDTO item = new ItemDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        item = await Service.Get(id);
+    }
+
+    async Task EditItems()
+    {
+        var respuesta = await Service.Put(item);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/items");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar item: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/items");
+    }
+}

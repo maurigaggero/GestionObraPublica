@@ -1,0 +1,112 @@
+﻿@page "/contratoitem/editar/{contratoItemId:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoItemService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (contratoItem.Item != null && contratoItem.Contrato != null)
+    {
+        <h4><b>Editar Item: @contratoItem.Item.DescItem del Contrato: @contratoItem.Contrato.Descripcion</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <EditForm Model="@contratoItem" OnValidSubmit="@EditContratoItem">
+            <div class="form-field mt-2 mb-2">
+
+                <div class="form-group row p-2" hidden>
+                    <label class="col-form-label">Contrato Id</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="contratoItem.ContratoId" placeholder="ID de Contrato" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItem.ContratoId)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Codigo</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputText @bind-Value="contratoItem.CodItem" placeholder="Codigo de item" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItem.CodItem)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Descripcion</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputTextArea @bind-Value="contratoItem.DescItem" placeholder="Descripcion del item" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItem.DescItem)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Cantidad</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="contratoItem.CantidadTotal" placeholder="Cantidad" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItem.CantidadTotal)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Coeficiente</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="contratoItem.Coeficiente" placeholder="Coeficiente" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItem.Coeficiente)" />
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-block btn-success">
+                    <i class="oi oi-check "></i>
+                    <text style="color:white"> Guardar</text>
+                </button>
+            </div>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    public ContratoItemDTO contratoItem = new ContratoItemDTO();
+
+    [Parameter] public int contratoItemId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        contratoItem = await Service.Get(contratoItemId);
+    }
+
+    async Task EditContratoItem()
+    {
+        var respuesta = await Service.Put(contratoItem);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/contratoitems/{@contratoItem.ContratoId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar contrato: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/contratoitems/{@contratoItem.ContratoId}");
+    }
+}

@@ -1,0 +1,50 @@
+﻿@page "/itemscontrolparams/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ItemsControlParamsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (itemControlParams != null && itemControlParams.ItemControl != null)
+    {
+        <h4><b>Editar Parametro del Control @itemControlParams.ItemControl.DescControl</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItemControlParams itemControlParam="@itemControlParams" TextBotonSubmit="Guardar" OnValidSubmit="@EditControlParams" />
+    </div>
+</div>
+
+@code {
+    public ItemControlParamDTO itemControlParams = new ItemControlParamDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        itemControlParams = await Service.Get(id);
+    }
+
+    async Task EditControlParams()
+    {
+        var respuesta = await Service.Put(itemControlParams);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/itemscontrolparams/{itemControlParams.ItemControlId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar parametro: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/itemscontrolparams/{itemControlParams.ItemControlId}");
+    }
+}

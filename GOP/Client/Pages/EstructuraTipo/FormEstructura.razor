@@ -1,0 +1,37 @@
+﻿<EditForm Model="@estructura" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Código</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="estructura.CodTipo" oninput="this.value=this.value.toUpperCase()" placeholder="Código de la estructura" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => estructura.CodTipo)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="estructura.DescTipo" placeholder="Descripción de la estructura" class="form-control"/>
+                </div>
+                <ValidationMessage For="@(() => estructura.DescTipo)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public EstructuraTipoDTO estructura { get; set; } = new EstructuraTipoDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+}

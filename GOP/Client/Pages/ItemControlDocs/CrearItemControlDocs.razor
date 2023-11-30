@@ -1,0 +1,49 @@
+﻿@page "/itemcontroldocs/crear/{itemControl:int}"
+@inject NavigationManager NavigationManager
+@inject ItemControlDocsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Documento para Control</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItemControlDocs itemControlDocs="@itemControlDocs" TextBotonSubmit="Guardar" OnValidSubmit="@CrearControl" ocultaCarga="false" />
+    </div>
+</div>
+
+@code {
+    public ItemControlDocDTO itemControlDocs = new ItemControlDocDTO();
+
+    [Parameter] public int itemControl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        itemControlDocs.ItemControlId = itemControl;
+    }
+
+    async Task CrearControl()
+    {
+        var respuesta = await Service.Post(itemControlDocs);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/itemcontroldocs/{itemControl}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear documento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+         NavigationManager.NavigateTo($"/itemcontroldocs/{itemControl}");
+    }
+}

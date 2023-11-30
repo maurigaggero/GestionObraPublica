@@ -1,0 +1,212 @@
+﻿@page "/certificadoitemcontrolparams/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoItemControlParamsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (certificadoItemControlParams != null && certificadoItemControlParams.CertificadoItemControl != null)
+    {
+        <h5><b>Control: @certificadoItemControlParams.CertificadoItemControl.DescControl</b></h5>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i>
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <EditForm Model="@certificadoItemControlParams" OnValidSubmit="@Editar">
+
+            @if (certificadoItemControlParams != null)
+            {
+                <div class="p-2">
+                    <dt>@certificadoItemControlParams.Parametro 
+                        - @certificadoItemControlParams.Descripción 
+                        ( 
+                            @if (certificadoItemControlParams.Unidad != null)
+                            {
+                                @certificadoItemControlParams.Unidad.CodUnidad
+                            }
+                        )
+                    </dt>
+                </div>
+                @if (certificadoItemControlParams.ContratoItemControlParam != null)
+                {
+                    @if (certificadoItemControlParams.ContratoItemControlParam.TipoParam
+                         == TipoParam.Comparar)
+                    {
+                        <div class="p-2">
+                            <dt>
+                                Mínimo = @certificadoItemControlParams.ContratoItemControlParam.ValorMinimo
+                                (
+                                @if (certificadoItemControlParams.Unidad != null)
+                                {
+                                    @certificadoItemControlParams.Unidad.CodUnidad
+                                }
+                                )
+                                Máximo = @certificadoItemControlParams.ContratoItemControlParam.ValorMaximo
+                                (
+                                @if (certificadoItemControlParams.Unidad != null)
+                                {
+                                    @certificadoItemControlParams.Unidad.CodUnidad
+                                }
+                                )
+                            </dt>
+                        </div>
+
+                        <div class="form-group row p-2">
+                            <label class="col-form-label">
+                                Valor Medido
+                                (
+                                @if (certificadoItemControlParams.Unidad != null)
+                                {
+                                    @certificadoItemControlParams.Unidad.CodUnidad
+                                }
+                                )
+                            </label>
+                            <div class="col">
+                                <div class="input-group">
+                                    <InputNumber @bind-Value="certificadoItemControlParams.ValorMedido" placeholder="Valor medido" class="form-control" />
+                                </div>
+                                <ValidationMessage For="@(() => certificadoItemControlParams.ValorMedido)" />
+                            </div>
+                        </div>
+                    }
+
+                    @if (certificadoItemControlParams.ContratoItemControlParam.TipoParam
+                         == TipoParam.Dato)
+                    {
+                        <div class="p-2">
+                            <dt>
+                                Valor Adoptado = 
+                                @certificadoItemControlParams.ContratoItemControlParam.ValorDato
+                                (
+                                @if (certificadoItemControlParams.Unidad != null)
+                                {
+                                    @certificadoItemControlParams.Unidad.CodUnidad
+                                }
+                                )
+                            </dt>
+                        </div>
+                    }
+
+                    @if (certificadoItemControlParams.ContratoItemControlParam.TipoParam
+                         == TipoParam.Informar)
+                    {
+                        <div class="form-group row p-2">
+                            <label class="col-form-label">
+                                Valor Informado
+                                (
+                                @if (certificadoItemControlParams.Unidad != null)
+                                {
+                                    @certificadoItemControlParams.Unidad.CodUnidad
+                                }
+                                )
+                            </label>
+                            <div class="col">
+                                <div class="input-group">
+                                    <InputNumber @bind-Value="certificadoItemControlParams.ValorMedido" placeholder="Valor medido" class="form-control" />
+                                </div>
+                                <ValidationMessage For="@(() => certificadoItemControlParams.ValorMedido)" />
+                            </div>
+                        </div>
+                    }
+                }
+            }
+
+            <div class="form-group row p-2">
+                <label class="col-form-label">Estado</label>
+                <div class="col">
+                    <InputSelect @bind-Value="certificadoItemControlParams.Estado" class="form-control">
+                        @foreach (var tipo in Enum.GetValues(typeof(EnumEstadoControl)))
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => certificadoItemControlParams.Estado)" />
+                </div>
+            </div>
+
+            <div class="form-group row p-2">
+                <label class="col-form-label">Observaciones</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputTextArea @bind-Value="certificadoItemControlParams.Obs" placeholder="Observaciones" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControlParams.Obs)" />
+                </div>
+            </div>
+
+
+            <div class="form-group row p-2" hidden>
+                <label class="col-form-label">Certificado Item Control</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputNumber @bind-Value="certificadoItemControlParams.CertificadoItemControlId" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControlParams.CertificadoItemControlId)" />
+                </div>
+            </div>
+
+            <div class="form-group row p-2" hidden>
+                <label class="col-form-label">Contrato Item Control Parametro</label>
+                <div class="col">
+                    <div class="input-group">
+                        <InputNumber @bind-Value="@certificadoItemControlParams.ContratoItemControlParamId" class="form-control" />
+                    </div>
+                    <ValidationMessage For="@(() => certificadoItemControlParams.ContratoItemControlParamId)" />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-block btn-success">
+                    <i class="oi oi-check "></i>
+                    <text style="color:white"> Guardar</text>
+                </button>
+            </div>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+</div>
+
+
+@code {
+    public CertificadoItemControlParamDTO certificadoItemControlParams = new CertificadoItemControlParamDTO();
+
+    [Parameter] public int id { get; set; }
+
+    IEnumerable<UnidadDTO> unidades = new List<UnidadDTO>();
+
+    UnidadDTO unidad = new UnidadDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        certificadoItemControlParams = await Service.Get(id);
+    }
+
+
+    async Task Editar()
+    {
+        var respuesta = await Service.Put(certificadoItemControlParams);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificadoitemscontrolparams/{certificadoItemControlParams.CertificadoItemControlId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar parametro: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificadoitemscontrolparams/{certificadoItemControlParams.CertificadoItemControl.CertificadoItemId}");
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+}

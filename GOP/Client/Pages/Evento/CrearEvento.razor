@@ -1,0 +1,52 @@
+﻿@page "/evento/crear"
+@inject NavigationManager NavigationManager
+@inject EventoService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear evento</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEvento evento="@evento" TextBotonSubmit="Guardar" OnValidSubmit="@NuevoEvento" />
+    </div>
+</div>
+
+@code {
+    public EventoDTO evento = new EventoDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        evento.Fecha = DateTime.Now;
+    }
+
+    async Task NuevoEvento()
+    {
+        var respuesta = await Service.Post(evento);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var idRespuesta = await respuesta.Content.ReadAsStringAsync();
+            int iD = Convert.ToInt32(idRespuesta);
+            var nuevoEvento = await Service.Get(iD);
+            NavigationManager.NavigateTo($"/evento/editar/{nuevoEvento.Id}");
+            evento = new EventoDTO();
+            await JS.InvokeVoidAsync("scroll");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear evento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/eventos");
+    }
+}

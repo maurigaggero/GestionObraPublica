@@ -1,0 +1,47 @@
+﻿@page "/contrato/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Contrato</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormContrato contrato="@contrato" TextBotonSubmit="Guardar" OnValidSubmit="@EditContrato"/>
+    </div>
+</div>
+
+@code {
+    public ContratoDTO contrato = new ContratoDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        contrato = await Service.GetNoFull(id);
+    }
+
+    async Task EditContrato()
+    {
+        var respuesta = await Service.Put(contrato);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/contratos");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar contrato: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/contratos");
+    }
+}

@@ -1,0 +1,224 @@
+﻿@page "/contratoitemscontrolparams/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoItemControlesParamsService Service
+@inject UnidadesService UnidadesService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (contratoItemControlParams != null && contratoItemControlParams.ContratoItemControl != null)
+    {
+        <h4><b>Editar Parametro del Control @contratoItemControlParams.ContratoItemControl.DescControl</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <EditForm Model="@contratoItemControlParams" OnValidSubmit="@EditControlParams">
+            <div class="form-field m-1">
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Parametro</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputText @bind-Value="contratoItemControlParams.Parametro" placeholder="Parametro" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.Parametro)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Descripción</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputTextArea @bind-Value="contratoItemControlParams.Descripción" placeholder="Descripción" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.Descripción)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Unidad</label>
+                    <div class="col">
+                        <div class="input-group">
+                            @if (unidades != null)
+                            {
+                                <InputSelect @bind-Value="contratoItemControlParams.UnidadId" class="form-control">
+                                    <option selected value="">Seleccione unidad</option>
+                                    @foreach (var unidad in unidades)
+                                    {
+                                    <option value="@unidad.Id">@unidad.DescUnidad</option>
+                                    }
+                            </InputSelect>
+                                <button type="button" class="btn btn-primary btn-block" @onclick="NuevaUnidad" data-toggle="tooltip" data-placement="left" title="Si la unidad no aparece en la lista haga click aqui para darla de alta">
+                                    <i class="oi oi-plus"></i>
+                                </button>
+                            }
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.UnidadId)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2">
+                    <label class="col-form-label">Tipo</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputSelect @bind-Value="contratoItemControlParams.TipoParam" @onclick="@ValidacionesTipoParam" class="form-control">
+                                @foreach (var tipo in Enum.GetValues(typeof(TipoParam)))
+                                {
+                                    <option value="@tipo">@tipo</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.TipoParam)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2" hidden="@ocultaDato">
+                    <label class="col-form-label">Dato</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="contratoItemControlParams.ValorDato" placeholder="Valor dato" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.ValorDato)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2" hidden="@ocultaMinimoMaximo">
+                    <label class="col-form-label">Minimo</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="contratoItemControlParams.ValorMinimo" placeholder="Valor mínimo" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.ValorMinimo)" />
+                    </div>
+                </div>
+
+                <div class="form-group row p-2" hidden="@ocultaMinimoMaximo">
+                    <label class="col-form-label">Maximo</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="contratoItemControlParams.ValorMaximo" placeholder="Valor máximo" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.ValorMaximo)" />
+                    </div>
+                </div>
+
+
+                <div class="form-group row p-2" hidden>
+                    <label class="col-form-label">Contrato Item Control</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <InputNumber @bind-Value="@contratoItemControlParams.ContratoItemControllId" class="form-control" />
+                        </div>
+                        <ValidationMessage For="@(() => contratoItemControlParams.ContratoItemControllId)" />
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-block btn-success">
+                        <i class="oi oi-check "></i>
+                        <text style="color:white"> Guardar</text>
+                    </button>
+                </div>
+            </div>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+</div>
+
+<!--Modal Unidad-->
+<div class="modal fade" id="modalCrearUnidad3" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Unidad</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.Unidad.FormUnidad TextBotonSubmit="Guardar" OnValidSubmit="CrearUnidad" unidad="unidad"></GOP.Client.Pages.Unidad.FormUnidad>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public ContratoItemControlParamDTO contratoItemControlParams = new ContratoItemControlParamDTO();
+
+    [Parameter] public int id { get; set; }
+
+    public bool ocultaDato { get; set; } = true;
+    public bool ocultaMinimoMaximo { get; set; } = true;
+
+    IEnumerable<UnidadDTO> unidades = new List<UnidadDTO>();
+
+    UnidadDTO unidad = new UnidadDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        contratoItemControlParams = await Service.Get(id);
+        unidades = await UnidadesService.GetFull();
+        ValidacionesTipoParam();
+    }
+
+    void ValidacionesTipoParam()
+    {
+        ocultaDato = true; ocultaMinimoMaximo = true;
+
+        if (contratoItemControlParams.TipoParam == TipoParam.Dato)
+        {
+            ocultaDato = false; ocultaMinimoMaximo = true;
+        }
+        if (contratoItemControlParams.TipoParam == TipoParam.Comparar)
+        {
+            ocultaDato = true; ocultaMinimoMaximo = false; 
+        }
+    }
+
+    async Task EditControlParams()
+    {
+        var respuesta = await Service.Put(contratoItemControlParams);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/contratoitemscontrolparams/{id}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar parametro: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/contratoitemscontroles/{@contratoItemControlParams.ContratoItemControl.ContratoItemId}");
+    }
+
+    async Task CrearUnidad()
+    {
+        var respuesta = await UnidadesService.Post(unidad);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearUnidad3");
+            unidades = await UnidadesService.GetFull();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear unidad: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void NuevaUnidad()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearUnidad3");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+}

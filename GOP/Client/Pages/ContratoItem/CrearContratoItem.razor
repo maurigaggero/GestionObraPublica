@@ -1,0 +1,103 @@
+﻿@page "/contratoitem/crear/{contratoId:int}"
+@using GOP.Client.Pages.Helpers
+@inject NavigationManager NavigationManager
+@inject ContratoItemService Service
+@inject ContratoService ContratoService
+@inject ItemsService ItemService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Agregar items a contrato</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+<div class="form-field mt-2 mb-2" hidden>
+    <div class="form-group row p-2">
+        <label class="col-form-label">Contrato</label>
+        <div class="col">
+            <div class="input-group">
+                <input @bind="contratoItem.ContratoId" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<GOP.Client.Pages.Helpers.SelectorMultiple Seleccionados="Seleccionados" NoSeleccionados="NoSeleccionados"></GOP.Client.Pages.Helpers.SelectorMultiple>
+
+<div class="d-flex justify-content-end">
+    <button @onclick="NuevoContratoItem" class="btn btn-block btn-success">
+        <i class="oi oi-check "></i>
+        <text style="color:white"> Guardar</text>
+    </button>
+</div>
+
+@code {
+    [Parameter] public int contratoId { get; set; }
+    public ContratoItemDTO contratoItem = new ContratoItemDTO();
+
+    private List<SelectorMultipleModel> Seleccionados { get; set; } = new List<SelectorMultipleModel>();
+    private List<SelectorMultipleModel> NoSeleccionados { get; set; } = new List<SelectorMultipleModel>();
+    private List<SelectorMultipleModel> SeleccionadosGrabados { get; set; } = new List<SelectorMultipleModel>();
+
+    private List<ItemDTO> ItemsNoSeleccionados { get; set; } = new List<ItemDTO>();
+    private List<ItemDTO> ItemsSeleccionados { get; set; } = new List<ItemDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        contratoItem.ContratoId = contratoId;
+
+        var items = (List<ItemDTO>)await ItemService.GetFull();
+        var contrato = await ContratoService.Get(contratoId);
+
+        foreach (var cItem in contrato.ContratoItems)
+        {
+            ItemsSeleccionados.Add(cItem.Item);
+        }
+
+        var lstIdItems = ItemsSeleccionados.Select(x => x.Id);
+
+        ItemsNoSeleccionados = items.ExceptBy(lstIdItems, x => x.Id).ToList();
+
+        Seleccionados = ItemsSeleccionados.Select(x => new SelectorMultipleModel(x.Id, x.DescItem)).ToList();
+        NoSeleccionados = ItemsNoSeleccionados.Select(x => new SelectorMultipleModel(x.Id, x.DescItem)).ToList();
+
+        foreach (var fitem in Seleccionados)
+        {
+            SeleccionadosGrabados.Add(fitem);
+        }
+    }
+
+    public bool guardando { get; set; } = false;
+
+    async Task NuevoContratoItem()
+    {
+        if (!guardando)
+        {
+            guardando = true;
+
+            var seleccionados = Seleccionados.AsEnumerable().Except(SeleccionadosGrabados);
+
+            contratoItem.IdsItems = seleccionados.Select(x => x.Clave).ToList();
+
+            var respuesta = await Service.Post(contratoItem);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo($"/contratoitems/{@contratoId}");
+            }
+            else
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo agregar items al contrato: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+
+            guardando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/contratoitems/{@contratoId}");
+    }
+}

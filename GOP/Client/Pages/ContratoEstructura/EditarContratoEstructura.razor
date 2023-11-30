@@ -1,0 +1,66 @@
+﻿@page "/contratoestructura/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoEstructuraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (cEstructura != null && cEstructura.Contrato != null)
+    {
+        <h4><b>Editar Estructura @cEstructura.DescEstructura del Contrato: @cEstructura.Contrato.Descripcion</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+        <button @onclick="@CrearNuevo" class="btn btn-sm btn-success">
+            <i class="oi oi-plus"></i> Nuevo
+        </button>
+        <button @onclick="@VerDocumentos" class="btn btn-sm btn-dark">
+            <i class="oi oi-document"></i> Documentos
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormContratoEstructura cEstructura="@cEstructura" TextBotonSubmit="Guardar" OnValidSubmit="@EditEstructura" />
+    </div>
+</div>
+
+@code {
+    public ContratoEstructuraDTO cEstructura = new ContratoEstructuraDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cEstructura = await Service.Get(id);
+    }
+
+    async Task EditEstructura()
+    {
+        var respuesta = await Service.Put(cEstructura);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/contratoestructura/{cEstructura.ContratoId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar estructura: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/contratoestructura/{cEstructura.ContratoId}");
+    }
+
+    private void CrearNuevo()
+    {
+        NavigationManager.NavigateTo($"/contratoestructura/crear/{cEstructura.ContratoId}");
+    }
+
+    private void VerDocumentos()
+    {
+        NavigationManager.NavigateTo($"/contratoestructuradocs/{cEstructura.Id}");
+    }
+}

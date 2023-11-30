@@ -1,0 +1,57 @@
+﻿@page "/certificadoitem/editar/{certificadoItemId:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoItemsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @* @if (certificadoItem.ItemContrato != null && certificadoItem.Certificado != null)
+    {
+    <h5>
+    @certificadoItem.Certificado.Periodo.Substring(0,2)/@certificadoItem.Certificado.Periodo.Substring(2)
+    - @certificadoItem.DescItem
+    </h5>
+    }*@
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i>
+        </button>
+    </div>
+</div>
+
+@*<div class="card m-1">
+    *@
+    <div class="card-body">
+        <FormCertificadoItem edit="true" certificado="certificado" certificadoItem="certificadoItem" OnValidSubmit="Editar"></FormCertificadoItem>
+    </div>
+@*</div>*@
+
+@code {
+    public CertificadoItemDTO certificadoItem = new CertificadoItemDTO();
+
+    public CertificadoDTO certificado = new CertificadoDTO();
+
+    [Parameter] public int certificadoItemId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        certificadoItem = await Service.Get(certificadoItemId);
+        certificado = certificadoItem.Certificado;
+    }
+
+    async Task Editar()
+    {
+        var respuesta = await Service.Put(certificadoItem);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificadoitems/{certificadoItem.CertificadoId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar item certificado: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificadoitems/{certificadoItem.CertificadoId}");
+    }
+}

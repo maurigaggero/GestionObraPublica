@@ -1,0 +1,70 @@
+﻿@inject ContratoDocsService Service
+@using System.IO
+@using System.Net.Http.Headers
+@inject IJSRuntime JS
+
+<EditForm Model="@contratoDocs" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="contratoDocs.Descripcion" placeholder="Descripción" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoDocs.Descripcion)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden="@ocultaCarga">
+            <label class="col-form-label">Archivo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputFile OnChange="@HandleSelected" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoDocs.File)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Contrato</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="contratoDocs.ContratoId" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoDocs.ContratoId)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public ContratoDocDTO contratoDocs { get; set; } = new ContratoDocDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public bool ocultaCarga { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        
+    }
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles();
+
+        var documento = await Utils.FileToBase64(files);
+        contratoDocs.PathDoc = documento.PathDoc;
+        contratoDocs.Extension = documento.Extension;
+        contratoDocs.File = documento.File;
+    }
+
+}

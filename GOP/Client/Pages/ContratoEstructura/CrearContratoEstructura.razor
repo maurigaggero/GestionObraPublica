@@ -1,0 +1,65 @@
+﻿@page "/contratoestructura/crear/{contrato:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoEstructuraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Estructura</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormContratoEstructura cEstructura="@estructura" TextBotonSubmit="Guardar" OnValidSubmit="@NuevaEstructura" />
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public int contrato { get; set; }
+
+    public ContratoEstructuraDTO estructura = new ContratoEstructuraDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        estructura.ContratoId = contrato;
+    }
+
+    public bool guardando { get; set; } = false;
+
+    async Task NuevaEstructura()
+    {
+        if (!guardando)
+        {
+            guardando = true;
+
+            var respuesta = await Service.Post(estructura);
+
+            if (!respuesta.IsSuccessStatusCode)
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear estructura: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+            else
+            {
+                var idRespuesta = await respuesta.Content.ReadAsStringAsync();
+                int iD = Convert.ToInt32(idRespuesta);
+                var nuevaEstructura = await Service.Get(iD);
+                NavigationManager.NavigateTo($"/contratoestructura/editar/{nuevaEstructura.Id}");
+                estructura = new ContratoEstructuraDTO();
+                await JS.InvokeVoidAsync("scroll");
+            }
+
+            guardando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/contratoestructura/{contrato}");
+    }
+
+}

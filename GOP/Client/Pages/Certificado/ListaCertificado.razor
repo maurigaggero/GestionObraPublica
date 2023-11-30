@@ -1,0 +1,278 @@
+﻿@page "/certificados/{contratoId:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoService Service
+@inject CertificadoItemDefService CertificadoItemDefService
+@inject ContratoService ContratoServ
+@inject UserService UserService
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    @if (@caratula != "")
+    {
+        <h5>@caratula</h5>
+    }
+    <div>
+        <a href="contratos" class="btn btn-sm btn-secondary m-1">
+            <i class="oi oi-arrow-circle-left"></i>
+        </a>
+        <a href="certificado/crear/@contratoId" class="btn btn-sm btn-success">
+            <i class="oi oi-plus"></i>
+        </a>
+    </div>
+</div>
+
+@if (certificados == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (certificados.Count() == 0)
+{
+    <p>No se encontraron certificados.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Certificados</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var certificado in certificados)
+            {
+                <tr>
+                    <td data-toggle="tooltip" data-placement="bottom" title="@certificado.Obs">
+                        @DllStatic.PeriodoSeparado( certificado.Periodo, "/")  @*Sergio*@
+                        - <b>@certificado.Estado</b>
+                        <br>
+                        @if (authState != null && !authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1" || x.Value.ToUpper() == "CONSULTA2"))
+                        {
+                            <a class="btn btn-sm btn-outline-warning m-1" href="certificado/editar/@certificado.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+                            <button @onclick="@(() => Borrar(certificado.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        }
+                        <a class="btn btn-sm btn-outline-primary m-1"
+                   href="/certificado/mediciones/@certificado.Id"
+                   data-toggle="tooltip"
+                   data-placement="bottom"
+                   title="Ver mediciones">
+                            <i class="oi oi-eye"></i>
+                        </a>
+                        <a href="/certificadoitems/@certificado.Id"
+                   class="btn btn-sm btn-outline-secondary m-1"
+                   data-toggle="tooltip"
+                   data-placement="bottom"
+                   title="Ver Items">
+                            <i class="oi oi-list"></i>
+                        </a>
+                        <a href="/certificadodocs/@certificado.Id"
+                           class="btn btn-sm btn-outline-dark m-1"
+                           data-toggle="tooltip"
+                           data-placement="bottom"
+                           title="Ver Documentos">
+                            <i class="oi oi-document"></i>
+                        </a>
+                        <button @onclick="@(() => GenerarExcel(certificado))" class="btn btn-sm btn-warning m-1"
+                        data-toggle="tooltip"
+                        data-placement="bottom"
+                        title="Generar Excel">
+                            <i class="oi oi-spreadsheet"></i>
+                        </button>
+                        <button @onclick="@(() => GenerarExcelDefinitivo(certificado))" class="btn btn-sm btn-success  m-1"
+                        data-toggle="tooltip"
+                        data-placement="bottom"
+                        title="Generar Excel Definitivo">
+                            <i class="oi oi-spreadsheet"></i>
+                        </button>
+                        @if (authState != null
+                           && !authState.User.Claims.Any(
+                               x => x.Value.ToUpper() == "HyS"
+                               || x.Value.ToUpper() == "Frente"
+                               || x.Value.ToUpper() == "CONSULTA1"
+                               || x.Value.ToUpper() == "CONSULTA2"))
+                        {
+                            <button @onclick="@(() => GenerarDefinitivo(certificado.Id))"
+                                class="btn btn-sm btn-outline-success m-1"
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="Generar Definitivo">
+                                <i class="oi oi-circle-check"></i>
+                            </button>
+                            <button @onclick="@(() => AnularDefinitivo(certificado.Id))"
+                                class="btn btn-sm btn-outline-danger m-1"
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="Anular Definitivo">
+                                <i class="oi oi-circle-x"></i>
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+        @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public string caratula = "";  //sergio
+                                  //public ContratoDTO contrato = new ContratoDTO();
+    public IEnumerable<CertificadoDTO> certificados { get; set; }
+    public IEnumerable<CertificadoDTO> certificadosPag { get; set; }
+
+    [Parameter] public int contratoId { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    AuthenticationState authState;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        authState = await UserService.GetAuthenticationStateAsync();
+
+        await GetCertificados();
+        await Paginar(false);
+    }
+
+    private async Task Borrar(int id)
+    {
+        var certificado = await Service.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar certificado {certificado.Periodo}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await Service.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Certificado eliminado", "success");
+                await GetCertificados();
+                await Paginar(false);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar certificado", "error");
+            }
+        }
+    }
+
+    private async Task GetCertificados()
+    {
+        caratula = await ContratoServ.GetCaratula(contratoId);  //sergio
+                                                                //contrato = await ContratoServ.Get(contratoId);
+        certificados = await Service.GetFull(contratoId);
+        certificadosPag = certificados;
+    }
+
+    async Task Paginar(bool next)
+    {
+        certificados = certificadosPag;
+        int cantidadPorPagina = 10;
+        registros = certificados.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        certificados = certificados.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+
+    async Task GenerarDefinitivo(int id)
+    {
+        var respuesta = await Service.Definitivo(id);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("simple", "¡Éxito!", "Certificado definitivo generado correctamente.", "success");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear certificado definitivo: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    async Task AnularDefinitivo(int id)
+    {
+        var respuesta = await CertificadoItemDefService.Delete(id);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("simple", "¡Éxito!", "Certificado definitivo eliminado correctamente.", "success");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar certificado definitivo: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    protected async Task GenerarExcelDefinitivo(CertificadoDTO certificado)   //Sergio
+    {
+        IsDownloadStarted = 1;
+        StateHasChanged();
+
+        var response = await CertificadoItemDefService.GenerarExcel(certificado.Id);
+        response.EnsureSuccessStatusCode();
+
+        var fileBytes = await response.Content.ReadAsByteArrayAsync();
+        var filename = "Certificado Definitivo -"
+                       + $"{caratula.Substring(0, 2)}-"
+                       + $"({DllStatic.PeriodoSeparado(certificado.Periodo, "-")})-"
+                       + DateTime.Now.ToString("yyyyMMdd HHmm") + ".xlsx";  //Sergio
+        await JS.InvokeAsync<object>("saveAsFile", filename, Convert.ToBase64String(fileBytes));
+
+        IsDownloadStarted = 2;
+    }
+
+    public int IsDownloadStarted { get; set; } = 0;
+
+    protected async Task GenerarExcel(CertificadoDTO certificado)   //Sergio
+    {
+        IsDownloadStarted = 1;
+        StateHasChanged();
+
+        var response = await Service.GenerarExcel(certificado.Id);
+        response.EnsureSuccessStatusCode();
+
+        var fileBytes = await response.Content.ReadAsByteArrayAsync();
+        var filename = "Certificado Medido Provisorio -"
+                       + $"{caratula.Substring(0, 2)}-"
+                       + $"({DllStatic.PeriodoSeparado(certificado.Periodo, "-")})-"
+                       + DateTime.Now.ToString("yyyyMMdd HHmm") + ".xlsx";  //Sergio
+        await JS.InvokeAsync<object>("saveAsFile", filename, Convert.ToBase64String(fileBytes));
+
+        IsDownloadStarted = 2;
+    }
+
+}

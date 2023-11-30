@@ -1,0 +1,49 @@
+﻿@page "/certificadodocs/crear/{certificado:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoDocsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Documento de Certificado</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormCertificadoDocs certificadoDocs="@certificadoDocs" TextBotonSubmit="Guardar" OnValidSubmit="@Crear" ocultaCarga="false" />
+    </div>
+</div>
+
+@code {
+    public CertificadoDocDTO certificadoDocs = new CertificadoDocDTO();
+
+    [Parameter] public int certificado { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        certificadoDocs.CertificadoId = certificado;
+    }
+
+    async Task Crear()
+    {
+        var respuesta = await Service.Post(certificadoDocs);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificadodocs/{certificado}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear documento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificadodocs/{certificado}");
+    }
+}

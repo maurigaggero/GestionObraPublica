@@ -1,0 +1,73 @@
+﻿@inject ItemControlesService ItemControlesService
+@using System.IO
+@using System.Net.Http.Headers
+@inject IJSRuntime JS
+
+<EditForm Model="@itemControlDocs" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@itemControlDocs.Descripcion" placeholder="Descripción" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlDocs.Descripcion)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden="@ocultaCarga">
+            <label class="col-form-label">Archivo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputFile OnChange="@HandleSelected" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlDocs.File)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Item Control</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="itemControlDocs.ItemControlId" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlDocs.ItemControlId)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public ItemControlDocDTO itemControlDocs { get; set; } = new ItemControlDocDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public bool ocultaCarga { get; set; }
+
+    IEnumerable<ItemControlDTO> itemsControl = new List<ItemControlDTO>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        itemsControl = await ItemControlesService.GetFull();
+        itemControlDocs.Carpeta = "ItemControles";
+    }
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles();
+
+        var documento = await Utils.FileToBase64(files);
+        itemControlDocs.PathDoc = documento.PathDoc;
+        itemControlDocs.Extension = documento.Extension;
+        itemControlDocs.File = documento.File;
+    }
+
+}

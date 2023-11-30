@@ -1,0 +1,63 @@
+﻿@page "/evento/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject EventoService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Evento</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+        <button @onclick="@CrearNuevo" class="btn btn-sm btn-success">
+            <i class="oi oi-plus"></i> Nuevo
+        </button>
+        <button @onclick="@VerDocumentos" class="btn btn-sm btn-dark">
+            <i class="oi oi-document"></i> Documentos
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEvento evento="@evento" TextBotonSubmit="Guardar" OnValidSubmit="@Editar" />
+    </div>
+</div>
+
+@code {
+    public EventoDTO evento = new EventoDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        evento = await Service.Get(id);
+    }
+
+    async Task Editar()
+    {
+        var respuesta = await Service.Put(evento);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/eventos");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar evento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/eventos");
+    }
+
+    private void CrearNuevo()
+    {
+        NavigationManager.NavigateTo($"/evento/crear");
+    }
+
+    private void VerDocumentos()
+    {
+        NavigationManager.NavigateTo($"/eventodocs/{id}");
+    }
+}

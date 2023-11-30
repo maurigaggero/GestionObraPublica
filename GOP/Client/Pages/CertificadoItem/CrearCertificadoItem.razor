@@ -1,0 +1,60 @@
+﻿@page "/certificadoitem/crear/{certificadoId:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoItemsService Service
+@inject CertificadoService CertificadoService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Crear item certificado</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormCertificadoItem edit="false" certificado="certificado"  certificadoItem="certificadoItem" OnValidSubmit="Nuevo"></FormCertificadoItem>
+    </div>
+</div>
+
+@code {
+    public CertificadoItemDTO certificadoItem = new CertificadoItemDTO();
+
+    public CertificadoDTO certificado = new CertificadoDTO();
+
+    [Parameter] public int certificadoId { get; set; }
+
+    public bool guardando { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        certificadoItem.CertificadoId = certificadoId;
+        certificadoItem.FechaMedicion = DateTime.Now;
+        certificado = await CertificadoService.Get(certificadoId);
+    }
+
+    async Task Nuevo()
+    {
+        if (!guardando)
+        {
+            guardando = true;
+            var respuesta = await Service.Post(certificadoItem);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo($"/certificadoitems/{certificadoId}");
+            }
+            else
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear item de certificado: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+
+            guardando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificadoitems/{certificadoId}");
+    }
+}

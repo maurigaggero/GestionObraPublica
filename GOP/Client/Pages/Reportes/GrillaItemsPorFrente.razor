@@ -1,0 +1,96 @@
+﻿@inject NavigationManager NavigationManager
+@inject FrentesObraService Service
+@inject CertificadoItemsService CertItemService
+@inject IJSRuntime JS
+
+<br>
+
+<BlazoredTypeahead SearchMethod="GetFrentes"
+                   ConvertMethod="Convertir"
+                   @bind-Value="fObraId"
+                   placeholder="Buscar Frente Obra">
+    <SelectedTemplate Context="frenteId">
+        @{
+            var selected = ValorSeleccionado(frenteId);
+
+            <text>@selected?.CodFrenteObra, @selected?.NombreFrenteObra</text>
+        }
+    </SelectedTemplate>
+    <ResultTemplate Context="fObra">
+        @fObra.CodFrenteObra, @fObra.NombreFrenteObra
+    </ResultTemplate>
+</BlazoredTypeahead>
+
+@if (fObraId.HasValue)
+{
+    <button @onclick="@(() => ReporteItemsPorFrente(fObraId))"
+            class="btn btn-sm btn-success m-1"
+            data-toggle="tooltip"
+            data-placement="bottom"
+            title="Generar Excel">
+        <i class="oi oi-spreadsheet"></i> Items Por Frente
+    </button>
+}
+
+
+@code {
+    public FrenteObraDTO fObra { get; set; } = new FrenteObraDTO();
+    public IEnumerable<FrenteObraDTO> frentesObra = new List<FrenteObraDTO>();
+
+    public int? fObraId { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        frentesObra = await Service.GetFull();
+    }
+
+    private async Task<IEnumerable<FrenteObraDTO>> GetFrentes(string searchText)
+    {
+        return await Task.FromResult(frentesObra.Where(x => x.NombreFrenteObra.ToUpper().Contains(searchText.ToUpper())).ToList());
+    }
+
+    private int? Convertir(FrenteObraDTO fobra)
+    {
+        return fobra?.Id;
+    }
+
+    private FrenteObraDTO ValorSeleccionado(int? id)
+    {
+        return frentesObra.FirstOrDefault(p => p.Id == id);
+    }
+
+
+    public int IsDownloadStarted { get; set; } = 0;
+
+    protected async Task ReporteItemsPorFrente(int? frenteId)
+    {
+        IsDownloadStarted = 1;
+        StateHasChanged();
+
+        if (frenteId.HasValue)
+        {
+            var response = await CertItemService.GenerarExcelItemsPorFrente(frenteId.Value);
+            response.EnsureSuccessStatusCode();
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+            var filename = "Items Medidos Frente_" + frenteId + "_"
+                           + DateTime.Now.ToString("yyyyMMdd HHmm") + ".xlsx";
+
+            await JS.InvokeAsync<object>("saveAsFile", filename, Convert.ToBase64String(fileBytes));
+
+            IsDownloadStarted = 2;
+        }
+
+    }
+
+}

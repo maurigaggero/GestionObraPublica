@@ -1,0 +1,49 @@
+﻿@page "/certificadoitemcontroldocs/crear/{cItemControl:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoItemControlDocsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Documento de Certificado</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormCertificadoItemControlDocs cItemControlDocs="cItemControlDocs" TextBotonSubmit="Guardar" OnValidSubmit="@Crear" ocultaCarga="false" />
+    </div>
+</div>
+
+@code {
+    public CertificadoItemControlDocDTO cItemControlDocs = new CertificadoItemControlDocDTO();
+
+    [Parameter] public int cItemControl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        cItemControlDocs.CertificadoItemControlId = cItemControl;
+    }
+
+    async Task Crear()
+    {
+        var respuesta = await Service.Post(cItemControlDocs);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificadoitemcontroldocs/{cItemControl}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear documento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificadoitemcontroldocs/{cItemControl}");
+    }
+}

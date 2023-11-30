@@ -1,0 +1,50 @@
+﻿@page "/itemcontroles/crear/{item:int}"
+@inject NavigationManager NavigationManager
+@inject ItemControlesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Control</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItemControl itemControl="@itemControl" TextBotonSubmit="Guardar" OnValidSubmit="@CrearControl" Editar=true />
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public int item { get; set; }
+
+    public ItemControlDTO itemControl = new ItemControlDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        itemControl.ItemId = item;
+    }
+
+    async Task CrearControl()
+    {
+        var respuesta = await Service.Post(itemControl);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/itemscontroles/{item}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear control: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/itemscontroles/{item}");
+    }
+}

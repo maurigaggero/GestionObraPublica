@@ -1,0 +1,34 @@
+﻿<EditForm Model="@calle" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Nombre</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="calle.NombreCalle" placeholder="Nombre de la Calle" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => calle.NombreCalle)" />
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> @TextBotonSubmit</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public CalleDTO calle { get; set; } = new CalleDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+}

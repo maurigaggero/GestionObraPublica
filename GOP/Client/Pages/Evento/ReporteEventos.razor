@@ -1,0 +1,295 @@
+﻿@page "/eventos/reporte"
+@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject EventoService Service
+@inject ContratoService ContratoService
+@inject EventoTipoService TipoService
+@inject ZonasService ZonaService
+@inject FrentesObraService FrenteService
+@inject CertificadoService CertificadoService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    <h5>Reporte de Eventos</h5>
+</div>
+
+<div class="input-group d-flex justify-content-between mb-1" id="filtros">
+    <input class="form-control form-control-sm" type="date" @bind="@FechaDesde" @oninput="FiltroFechaDesde" />
+    <input class="form-control form-control-sm" type="date" @bind="@FechaHasta" @oninput="FiltroFechaHasta" />
+</div>
+
+<div class="input-group d-flex justify-content-between mb-1" id="filtros2">
+    @if (tipos != null)
+    {
+        <select class="form-control form-control-sm" @bind="@TipoId" @oninput="FiltroTipo">
+            <option selected value="0">Tipo Evento</option>
+            @foreach (var tipo in tipos)
+            {
+                <option value="@tipo.Id">@tipo.DescTipo</option>
+            }
+        </select>
+    }
+    else
+    {
+        <div>
+            <div class="col-auto spinner-grow" role="status"></div>
+            <p class="col-auto">Cargando filtros...</p>
+        </div>
+    }
+
+    @if (contratos != null)
+    {
+        <select class="form-control form-control-sm" @bind="@ContratoId" @oninput="FiltroContrato">
+            <option selected value="0">Contrato</option>
+            @foreach (var contrato in contratos)
+            {
+                <option value="@contrato.Id">@contrato.NumExpediente - @contrato.Caratula</option>
+            }
+        </select>
+    }
+    else
+    {
+        <div>
+            <div class="col-auto spinner-grow" role="status"></div>
+            <p class="col-auto">Cargando filtros...</p>
+        </div>
+    }
+</div>
+
+<div class="input-group d-flex justify-content-between mb-1" id="filtros2">
+    @if (zonas != null)
+    {
+        <select class="form-control form-control-sm" @bind="@ZonaId" @oninput="FiltroZona">
+            <option selected value="0">Zona</option>
+            @foreach (var zona in zonas)
+            {
+                <option value="@zona.Id">@zona.CodigoZona - @zona.NombreZona</option>
+            }
+        </select>
+    }
+    else
+    {
+        <div>
+            <div class="col-auto spinner-grow" role="status"></div>
+            <p class="col-auto">Cargando filtros...</p>
+        </div>
+    }
+
+    @if (frentes != null)
+    {
+        <select class="form-control form-control-sm" @bind="@FrenteId" @oninput="FiltroFrente">
+            <option selected value="0">Frente de Obra</option>
+            @foreach (var frente in frentes)
+            {
+                <option value="@frente.Id">@frente.CodFrenteObra - @frente.NombreFrenteObra</option>
+            }
+        </select>
+    }
+    else
+    {
+        <div>
+            <div class="col-auto spinner-grow" role="status"></div>
+            <p class="col-auto">Cargando filtros...</p>
+        </div>
+    }
+</div>
+
+
+<div class="input-group d-flex justify-content-end mb-1">
+    <div>
+        <button class="btn btn-sm btn-primary" @onclick="GetReporte"> <i class="oi oi-magnifying-glass"></i> Filtrar</button>
+        <button class="btn btn-sm btn-warning" @onclick="Descargar"> <i class="oi oi-document"></i> Descargar reporte</button>
+    </div>
+</div>
+
+<div>
+    <div id="reporteEvento">
+        <div class="d-flex justify-content-between mb-1">
+            <h5>Reporte de Eventos</h5>
+        </div>
+
+        @if (eventos == null)
+        {
+            <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+                <div class="col-auto spinner-grow" role="status"></div>
+                <p class="col-auto">Obteniendo eventos...</p>
+            </div>
+        }
+        else if (eventos.Count() == 0)
+        {
+            <p>No se encontraron eventos para los filtros especificados.</p>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Número</th>
+                        <th>Título</th>
+                        <th>Contrato</th>
+                        <th>Certificado</th>
+                        @*<th>Zona</th>*@
+                        <th>Frente</th>
+                        @*<th>Latitud</th>
+                        <th>Longitud</th>*@
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var evento in eventos)
+                    {
+                        <tr>
+                            <td>@evento.Fecha.ToString("dd/MM/yy")</td>
+                            <td>@evento.Numero</td>
+                            <td>
+                                @evento.Título
+                                <br>
+                                @evento.DescEvento
+                            </td>
+                            @if (evento.Contrato != null && evento.ContratoId!=0)
+                            {
+                                <td>
+                                    @evento.Contrato.NumExpediente
+                                    <br>
+                                    @evento.Contrato.Caratula.Substring(0,30)
+                                    @if(evento.Contrato.Caratula.Length>31)
+                                    {
+                                        <p>...</p>
+                                    }
+                                </td>
+                            }
+                            else
+                            {
+                                <td>-</td>
+                            }
+                            @if (evento.Certificado != null  && evento.CertificadoId != 0)
+                            {
+                                <td>@evento.Certificado.Periodo.Substring(0,2)/@evento.Certificado.Periodo.Substring(2)</td>
+                            }
+                            else
+                            {
+                                <td>-</td>
+                            }
+@*                          
+                            @if (evento.ZonaId != null && evento.ZonaId != 0)
+                            {
+                                <td>@evento.Zona.CodigoZona</td>
+                            }
+                            else if (evento.Contrato != null && evento.ContratoId != 0)
+                            {
+                                <td>@evento.Contrato.Caratula.Substring(0,2)</td>
+                            }
+                            else
+                            {
+                                <td>-</td>
+                            }
+*@
+                            @if (evento.FrenteObraId != null && evento.FrenteObraId != 0)
+                            {
+                                <td>@evento.FrenteObra.CodFrenteObra</td>
+                            }
+                            else
+                            {
+                                <td>-</td>
+                            }
+@*                            <td>@evento.Latitud</td>
+                            <td>@evento.Longitud</td>
+*@                      </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    </div>
+</div>
+
+@code {
+    public IEnumerable<EventoDTO> eventos { get; set; } = new List<EventoDTO>();
+
+    public IEnumerable<EventoTipoDTO> tipos { get; set; }
+
+    public IEnumerable<ContratoDTO> contratos { get; set; }
+
+    public IEnumerable<ZonaDTO> zonas { get; set; }
+
+    public IEnumerable<FrenteObraDTO> frentes { get; set; }
+
+    int? ContratoId { get; set; }
+
+    int? TipoId { get; set; }
+
+    int? ZonaId { get; set; }
+
+    int? FrenteId { get; set; }
+
+    DateTime FechaDesde { get; set; } = DateTime.Now.AddDays(-15);
+    DateTime FechaHasta { get; set; } = DateTime.Now;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        contratos = await ContratoService.GetFullSimple();
+        tipos = await TipoService.GetFull();
+        zonas = await ZonaService.GetFull();
+        frentes = await FrenteService.GetFull();
+
+        //await GetReporte();
+    }
+
+    async Task GetReporte()
+    {
+        FiltroEventoReporteDTO filtradoPag = new FiltroEventoReporteDTO()
+            {
+                FechaDesde = FechaDesde.ToString(),
+                FechaHasta = FechaHasta.ToString(),
+                TipoId = TipoId,
+                ContratoId = ContratoId,
+                ZonaId = ZonaId,
+                FrenteId = FrenteId
+            };
+
+        eventos = await Service.GetReporte(filtradoPag);
+    }
+
+    async Task Descargar()
+    {
+        await JS.InvokeVoidAsync("generarPdf",
+        "reporteEvento",
+        $"Reporte_Eventos_{FechaDesde}_{FechaHasta}",
+        "landscape");
+    }
+
+    async Task FiltroFechaDesde(ChangeEventArgs e)
+    {
+        FechaDesde = Convert.ToDateTime(e.Value.ToString());
+    }
+
+    async Task FiltroFechaHasta(ChangeEventArgs e)
+    {
+        FechaHasta = Convert.ToDateTime(e.Value.ToString());
+    }
+
+    async Task FiltroContrato(ChangeEventArgs e)
+    {
+        ContratoId = Convert.ToInt32(e.Value.ToString());
+    }
+
+    async Task FiltroTipo(ChangeEventArgs e)
+    {
+        TipoId = Convert.ToInt32(e.Value.ToString());
+    }
+
+    async Task FiltroZona(ChangeEventArgs e)
+    {
+        ZonaId = Convert.ToInt32(e.Value.ToString());
+    }
+
+    async Task FiltroFrente(ChangeEventArgs e)
+    {
+        FrenteId = Convert.ToInt32(e.Value.ToString());
+    }
+}

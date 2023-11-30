@@ -1,0 +1,47 @@
+﻿@page "/estructura/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject EstructuraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Tipo Estructura</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEstructura estructura="@estructura" TextBotonSubmit="Guardar" OnValidSubmit="@EditEstructura"/>
+    </div>
+</div>
+
+@code {
+    public EstructuraTipoDTO estructura = new EstructuraTipoDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        estructura = await Service.Get(id);
+    }
+
+    async Task EditEstructura()
+    {
+        var respuesta = await Service.Put(estructura);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/estructuras");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar estructura: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/estructuras");
+    }
+}

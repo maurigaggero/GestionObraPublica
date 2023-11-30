@@ -1,0 +1,50 @@
+﻿@page "/frenteobra/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject FrentesObraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (frenteObra.Zona != null)
+    {
+        <h4><b>Editar Frente Obra de la Zona: @frenteObra.Zona.NombreZona</b></h4>
+        <div>
+            <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i> Atrás
+            </button>
+        </div>
+    }
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormFrenteObra frenteObra="@frenteObra" TextBotonSubmit="Guardar" OnValidSubmit="@FrenteObraEdit" />
+    </div>
+</div>
+
+@code {
+    public FrenteObraDTO frenteObra = new FrenteObraDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        frenteObra = await Service.Get(id);
+    }
+
+    async Task FrenteObraEdit()
+    {
+        var respuesta = await Service.Put(frenteObra);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/frentesobra/{frenteObra.ZonaId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar frente de obra: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/frentesobra/{frenteObra.ZonaId}");
+    }
+}

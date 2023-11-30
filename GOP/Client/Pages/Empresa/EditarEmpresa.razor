@@ -1,0 +1,47 @@
+﻿@page "/empresa/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject EmpresasService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Empresa</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEmpresa empresa="@empresa" TextBotonSubmit="Guardar" OnValidSubmit="@EditEmpresa"/>
+    </div>
+</div>
+
+@code {
+    public EmpresaDTO empresa = new EmpresaDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        empresa = await Service.Get(id);
+    }
+
+    async Task EditEmpresa()
+    {
+        var respuesta = await Service.Put(empresa);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/empresas");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar empresa: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/empresas");
+    }
+}

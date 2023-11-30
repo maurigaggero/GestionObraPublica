@@ -1,0 +1,50 @@
+﻿@page "/estructura/crear"
+@inject NavigationManager NavigationManager
+@inject EstructuraService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear Tipo Estructura</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEstructura estructura="@estructura" TextBotonSubmit="Guardar" OnValidSubmit="@NuevaEstructura" />
+    </div>
+</div>
+
+@code {
+    public EstructuraTipoDTO estructura = new EstructuraTipoDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task NuevaEstructura()
+    {
+        var respuesta = await Service.Post(estructura);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var content = await respuesta.Content.ReadAsStringAsync();
+            var id = JsonConvert.DeserializeObject<int>(content);
+            var obj = await Service.Get(id);
+            NavigationManager.NavigateTo("/estructuras");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear estructura: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/estructuras");
+    }
+}

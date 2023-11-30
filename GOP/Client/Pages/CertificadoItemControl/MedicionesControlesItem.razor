@@ -1,0 +1,143 @@
+﻿@page "/control/mediciones/{id:int}"
+@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject CertificadoService CertificadoService
+@inject CertificadoItemsService CertificadoItemService
+@inject CertificadoItemControlsService Service
+@inject IJSRuntime JS
+
+<div class="m-2">
+    <div class="d-flex justify-content-end mb-1" id="header">
+        <div>
+            <button class="btn btn-sm btn-primary" @onclick="Descargar">
+                <i class="oi oi-document"></i>Descargar mediciones
+            </button>
+            <a href="certificadoitemcontroles/@id" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div id="medicionesControlesItem">
+        <div class="d-flex justify-content-between mb-1" id="header">
+            <h5>Mediciones de parametros del control</h5>
+        </div>
+
+        <div>
+            <dl class="dl-horizontal">
+                @if (certificado.Contrato != null && certificado.EmpresaProfesional != null
+                && certificado.EmpresaProfesional.Empresa != null)
+                {
+                    <dt>Expediente - Caratula - Empresa</dt>
+                    <dd>
+                        @certificado.Contrato.NumExpediente -
+                        @certificado.Contrato.Caratula -
+                        @certificado.EmpresaProfesional.Empresa.Nombre
+                    </dd>
+                }
+
+                @if (certificado != null)
+                {
+                    <dt>Periodo - Fecha - Estado</dt>
+                    <dd>
+                        @certificado.Periodo - @certificado.FechaCertificado.ToString("dd/MM/yy") - @certificado.Estado
+                    </dd>
+
+                    <dt>Observaciones</dt>
+                    <dd>
+                        @certificado.Obs
+                    </dd>
+                }
+
+
+                @if (item != null)
+                {
+                    <dt>Item - Estado - Medido</dt>
+                    <dd>
+                        @item.CodItem (@item.DescItem) - @item.Estado - @item.CantidadMedida
+                    </dd>
+                }
+
+                @if (control != null)
+                {
+                    <dt>Control</dt>
+                    <dd>
+                        @control.DescControl (@control.Estado)
+                    </dd>
+                }
+            </dl>
+        </div>
+
+        <div class="mt-1">
+            @if (parametros == null)
+            {
+                <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+                    <div class="spinner-grow" role="status"></div>
+                </div>
+            }
+            else if (parametros.Count() == 0)
+            {
+                <p>No se encontraron parametros para el control especificado.</p>
+            }
+            else
+            {
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Medido</th>
+                            <th>Obs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var param in parametros)
+                        {
+                            <tr>
+                                <td>
+                                    @param.Parametro -
+                                    @param.Descripción (
+                                    @if (param.Unidad != null)
+                                    {
+                                        @param.Unidad.CodUnidad
+                                    } )
+                                </td>
+                                <td>@param.ValorMedido</td>
+                                <td>@param.Obs</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+</div>
+
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    public CertificadoItemDTO item { get; set; } = new CertificadoItemDTO();
+
+    public CertificadoItemControlDTO control { get; set; } = new CertificadoItemControlDTO();
+
+    public CertificadoDTO certificado { get; set; } = new CertificadoDTO();
+
+    public IEnumerable<CertificadoItemControlParamDTO> parametros { get; set; } = new List<CertificadoItemControlParamDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        control = await Service.Get(id);
+        item = await CertificadoItemService.Get(control.CertificadoItemId);
+        certificado = item.Certificado;
+        parametros = control.Parametros;
+    }
+
+    async Task Descargar()
+    {
+        await JS.InvokeVoidAsync("generarPdf",
+        "medicionesControlesItem",
+        $"Listado_Mediciones_Certificado_{item.CertificadoId}_Item_{item.Id}_Control_{control.Id}_Parametros",
+        "portrait");
+    }
+}

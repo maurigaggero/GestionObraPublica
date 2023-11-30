@@ -1,0 +1,50 @@
+﻿@page "/empresaprofesional/editar/{empresa:int}"
+@inject NavigationManager NavigationManager
+@inject EmpresaProfesionalesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (empresaProfesional.Empresa != null)
+    {
+        <h4><b>Editar Profesional de la Empresa: @empresaProfesional.Empresa.Nombre</b></h4>
+        <div>
+            <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i> Atrás
+            </button>
+        </div>
+    }
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEmpresaProfesional empresaProfesional="@empresaProfesional" TextBotonSubmit="Guardar" OnValidSubmit="@EditItems" />
+    </div>
+</div>
+
+@code {
+    public EmpresaProfesionalDTO empresaProfesional = new EmpresaProfesionalDTO();
+
+    [Parameter] public int empresa { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        empresaProfesional = await Service.Get(empresa);
+    }
+
+    async Task EditItems()
+    {
+        var respuesta = await Service.Put(empresaProfesional);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/empresaprofesionales/{empresaProfesional.EmpresaId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar profesional: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/empresaprofesionales/{empresaProfesional.EmpresaId}");
+    }
+}

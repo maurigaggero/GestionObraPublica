@@ -1,0 +1,50 @@
+﻿@page "/itemcontroles/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ItemControlesService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    @if (itemControl != null && itemControl.Item != null)
+    {
+        <h4><b>Editar Control @itemControl.DescControl del Item: @itemControl.Item.DescItem</b></h4>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItemControl itemControl="@itemControl" TextBotonSubmit="Guardar" OnValidSubmit="@EditControl" Editar=true />
+    </div>
+</div>
+
+@code {
+    public ItemControlDTO itemControl = new ItemControlDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        itemControl = await Service.Get(id);
+    }
+
+    async Task EditControl()
+    {
+        var respuesta = await Service.Put(itemControl);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/itemscontroles/{itemControl.ItemId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar control: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/itemscontroles/{itemControl.ItemId}");
+    }
+}

@@ -1,0 +1,112 @@
+﻿@page "/certificado/mediciones/{id:int}"
+@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject CertificadoService Service
+@inject CertificadoItemsService CertificadoItemService
+@inject IJSRuntime JS
+
+<div class="m-2">
+    <div class="d-flex justify-content-end mb-1" id="header">
+        <div>
+            <button class="btn btn-sm btn-primary" @onclick="Descargar">
+                <i class="oi oi-document"></i>Descargar mediciones
+            </button>
+            <a href="certificados/@certificado.ContratoId" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div id="medicionesItemCertificado">
+        <div class="d-flex justify-content-between mb-1" id="header">
+            <h5>Mediciones de items certificado</h5>
+        </div>
+
+        <div>
+            <dl class="dl-horizontal">
+                @if (certificado.Contrato != null && certificado.EmpresaProfesional != null
+                && certificado.EmpresaProfesional.Empresa != null)
+                {
+                    <dt>Expediente - Caratula - Empresa</dt>
+                    <dd>
+                        @certificado.Contrato.NumExpediente -
+                        @certificado.Contrato.Caratula -
+                        @certificado.EmpresaProfesional.Empresa.Nombre
+                    </dd>
+                }
+
+                @if (certificado != null)
+                {
+                    <dt>Periodo - Fecha - Estado</dt>
+                    <dd>
+                        @certificado.Periodo - @certificado.FechaCertificado.ToString("dd/MM/yy") - @certificado.Estado
+                    </dd>
+
+                    <dt>Observaciones</dt>
+                    <dd>
+                       @certificado.Obs
+                    </dd>
+                }
+            </dl>
+        </div>
+
+        <div class="mt-1">
+            @if (items == null)
+            {
+                <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+                    <div class="spinner-grow" role="status"></div>
+                </div>
+            }
+            else if (items.Count() == 0)
+            {
+                <p>No se encontraron items para el certificado especificado.</p>
+            }
+            else
+            {
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Estado</th>
+                            <th>Medido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            <tr>
+                                <td>@item.CodItem - @item.DescItem</td>
+                                <td>@item.Estado</td>
+                                <td>@item.CantidadMedida</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+</div>
+
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    public CertificadoDTO certificado { get; set; } = new CertificadoDTO();
+
+    public IEnumerable<CertificadoItemDTO> items { get; set; } = new List<CertificadoItemDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        certificado = await Service.Get(id);
+        items = await CertificadoItemService.GetFull(id);
+    }
+
+    async Task Descargar()
+    {
+        await JS.InvokeVoidAsync("generarPdf",
+        "medicionesItemCertificado",
+        $"Listado_Mediciones_Certificado_{certificado.Id}_Contrato_{certificado.ContratoId}_Periodo_{certificado.Periodo}",
+        "portrait");
+    }
+}

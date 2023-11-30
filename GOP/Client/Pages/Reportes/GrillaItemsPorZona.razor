@@ -1,0 +1,43 @@
+﻿@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject UserService UserService
+@inject IJSRuntime JS
+
+
+<button @onclick="@(() => ReporteItemsPorZona())"
+class="btn btn-sm btn-success m-1"
+data-toggle="tooltip"
+data-placement="bottom"
+title="Generar Excel">
+    <i class="oi oi-spreadsheet"></i> Items por Zona
+</button>
+
+
+@code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    public int IsDownloadStarted { get; set; } = 0;
+
+    protected async Task ReporteItemsPorZona()
+    {
+        IsDownloadStarted = 1;
+        StateHasChanged();
+
+        var response = await Service.GenerarExcelItemsPorZona();
+        response.EnsureSuccessStatusCode();
+
+        var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+        var filename = "Item Medidos Por Zona_"
+                       + DateTime.Now.ToString("yyyyMMdd HHmm") + ".xlsx";
+
+        await JS.InvokeAsync<object>("saveAsFile", filename, Convert.ToBase64String(fileBytes));
+
+        IsDownloadStarted = 2;
+    }
+
+}

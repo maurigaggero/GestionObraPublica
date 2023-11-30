@@ -1,0 +1,135 @@
+﻿@inject PersonaService Service
+@inject IJSRuntime JS
+
+<EditForm Model="@empresaProfesional" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Persona</label>
+            <div class="col">
+                <BlazoredTypeahead SearchMethod="GetPersonas"
+                                   ConvertMethod="Convert"
+                                   @bind-Value="@empresaProfesional.PersonaId"
+                                   placeholder="Buscar Persona">
+                    <SelectedTemplate Context="personaId">
+                        @{
+                            var selected = ValorSeleccionado(personaId);
+
+                            <text>@selected?.Apellido, @selected?.Nombre - @selected?.DNI</text>
+                        }
+                    </SelectedTemplate>
+                    <ResultTemplate Context="persona">
+                        @persona.Apellido, @persona.Nombre - @persona.DNI
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => empresaProfesional.PersonaId)" />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-primary" @onclick="NuevaPersona" data-toggle="tooltip" data-placement="left" title="Si la persona no aparece en la lista haga click aqui para darla de alta">
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Empresa</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="@empresaProfesional.EmpresaId" placeholder="Empresa" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => empresaProfesional.EmpresaId)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Funcion</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@empresaProfesional.DescFuncProf" placeholder="Descripcion de la Funcion" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => empresaProfesional.DescFuncProf)" />
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> @TextBotonSubmit</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+<!--Modal Personas-->
+<div class="modal fade" id="modalCrearPersonas" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Unidad</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.Persona.FormPersona TextBotonSubmit="Guardar" OnValidSubmit="CrearPersona" persona="persona"></GOP.Client.Pages.Persona.FormPersona>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EmpresaProfesionalDTO empresaProfesional { get; set; }
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    IEnumerable<PersonaDTO> personas = new List<PersonaDTO>();
+
+    PersonaDTO persona = new PersonaDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        personas = await Service.GetFull();
+    }
+
+    private async Task<IEnumerable<PersonaDTO>> GetPersonas(string searchText)
+    {
+        return await Task.FromResult(personas.Where(x => x.Apellido.ToUpper().Contains(searchText.ToUpper())).ToList());
+    }
+
+    private int? Convert(PersonaDTO persona)
+    {
+        return persona?.Id;
+    }
+
+    private PersonaDTO ValorSeleccionado(int? id)
+    {
+        return personas.FirstOrDefault(p => p.Id == id);
+    }
+
+    async Task CrearPersona()
+    {
+        var respuesta = await Service.Post(persona);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearPersonas");
+            personas = await Service.GetFull();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear persona: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void NuevaPersona()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearPersonas");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+}

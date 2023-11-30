@@ -1,0 +1,98 @@
+﻿@using GOP.Shared.DTOs.Identity
+@inject PersonaService Service
+@inject IJSRuntime JS
+
+<EditForm Model="@usuario" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field mt-2 mb-2">
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Persona</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="usuario.IdPersona" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => usuario.IdPersona)" />
+            </div>
+        </div>
+
+        @if (persona != null)
+        {
+            <div class="px-2 py-1">
+                <dt>Nombre y Apellido de la Persona</dt>
+                <dd>@persona.Nombre @persona.Apellido</dd>
+
+                <dt>DNI de la Persona</dt>
+                <dd>@persona.DNI</dd>
+            </div>
+
+        }
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Rol</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputSelect @bind-Value="usuario.Rol" class="form-control">
+                        @foreach (var tipo in Enum.GetValues(typeof(EnumRol)))
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </InputSelect>
+                </div>
+                <ValidationMessage For="@(() => usuario.Rol)" />
+            </div>
+        </div>
+
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Contraseña</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText type="password" @bind-Value="@usuario.Contraseña" placeholder="Contraseña" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => usuario.Contraseña)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Repita Contraseña</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText type="password" @bind-Value="@usuario.ContraseñaRepetida" @onfocusout="@ValidaContraseñas" placeholder="Repita contraseña" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => usuario.ContraseñaRepetida)" />
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-block btn-success">
+            <i class="oi oi-check "></i>
+            <text style="color:white"> @TextBotonSubmit</text>
+        </button>
+    </div>
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+@code {
+    [Parameter] public RegistrarUserDTO usuario { get; set; } = new RegistrarUserDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public PersonaDTO persona { get; set; } = new PersonaDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        usuario.IdPersona = persona.Id;
+    }
+
+    void ValidaContraseñas()
+    {
+        if (usuario.Contraseña != usuario.ContraseñaRepetida)
+        {
+            JS.InvokeVoidAsync("simple", "Error", $"Error. Las contraseñas no coinciden.", "error");
+        }
+    }
+
+}

@@ -1,0 +1,146 @@
+﻿@page "/contratoitems/{contratoId:int}"
+@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject ContratoItemService ItemService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    @if (contrato != null)
+    {
+        <h5>Contrato: @contrato.Caratula</h5>
+    }
+    <div>
+        <button @onclick="@(() => AgregarItems(contrato.Id))" class="btn btn-sm btn-success">
+            <i class="oi oi-plus"></i>
+        </button>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i>
+        </button>
+    </div>
+</div>
+
+
+@if (items == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (items.Count() == 0)
+{
+    <p>No se encontraron items.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Item</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contratoItem in items)
+            {
+                <tr>
+                    <td>@contratoItem.CodItem-@contratoItem.DescItem (@contratoItem.Item.Unidad.CodUnidad)
+                        <br>
+@*                        <a class="btn btn-sm btn-outline-primary m-1" 
+                            href="contratoitemscontroles/@contratoItem.Id" 
+                            data-toggle="tooltip" data-placement="bottom" title="Controles">
+                            Controles
+                        </a>*@
+                        <a class="btn btn-sm btn-outline-warning m-1"
+                            href="contratoitem/editar/@contratoItem.Id"
+                            data-toggle="tooltip" data-placement="bottom" title="Editar">
+                            <i class="oi oi-pencil"></i>
+                        </a>
+                    </td>
+                    <td>@contratoItem.CantidadTotal</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+        @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public IEnumerable<ContratoItemDTO> items { get; set; }
+    public IEnumerable<ContratoItemDTO> itemsPag { get; set; }
+
+    [Parameter] public int contratoId { get; set; }
+
+    public ContratoDTO contrato { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        contrato = await Service.Get(contratoId);
+        await GetItems();
+        await Paginar(false);
+    }
+
+    private async Task GetItems()
+    {
+        items = await ItemService.GetFull(contratoId);
+        itemsPag = items;
+    }
+
+    async Task Paginar(bool next)
+    {
+        items = itemsPag;
+        int cantidadPorPagina = 10;
+        registros = items.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        items = items.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/contratos");
+    }
+
+    async Task AgregarItems(int id)
+    {
+        var contrato = await Service.Get(id);
+
+        NavigationManager.NavigateTo($"/contratoitem/crear/{@contrato.Id}");
+    }
+}

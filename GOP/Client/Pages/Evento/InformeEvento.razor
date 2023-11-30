@@ -1,0 +1,124 @@
+﻿@page "/evento/informe/{id:int}"
+@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject EventoService Service
+@inject EventoDocsService DocsService
+@inject IJSRuntime JS
+
+<div class="m-2">
+    <div class="d-flex justify-content-end mb-1" id="header">
+        <div>
+            <button class="btn btn-sm btn-primary" @onclick="Descargar">
+                <i class="oi oi-document"></i>Descargar informe
+            </button>
+            <a href="eventos" class="btn btn-sm btn-secondary">
+                <i class="oi oi-arrow-circle-left"></i>
+            </a>
+        </div>
+    </div>
+
+    <div id="informeEvento">
+        <div class="d-flex justify-content-between mb-1" id="header">
+            <h5>Informe de Eventos</h5>
+        </div>
+
+        <div>
+            <dl class="dl-horizontal">
+                <dt>Evento</dt>
+                <dd>@evento.Fecha - (@evento.Numero) - @evento.Título </dd>
+
+                <dt>Descripción</dt>
+                <dd>@evento.DescEvento</dd>
+
+                @if (evento.Contrato != null)
+                {
+                    <dt>Contrato</dt>
+                    <dd>
+                        @evento.Contrato.NumExpediente - @evento.Contrato.Caratula
+                        @if (evento.Certificado != null)
+                        {
+                            <br />
+                            @($"Certificado: {evento.Certificado.Periodo}")
+                        }
+                    </dd>
+                }
+
+                @if (evento.FrenteObra != null)
+                {
+                    <dd>
+                        Frente: @evento.FrenteObra.NombreFrenteObra
+                    </dd>
+                }
+
+                <dt>Posición</dt>
+                <dd>Latitud: @evento.Latitud - Longitud: @evento.Longitud</dd>
+            </dl>
+        </div>
+
+        <div class="mt-1">
+            @if (eventoDocs.Count() == 0)
+            {
+                <p>No se encontraron documentos para el evento especificado.</p>
+            }
+            else
+            {
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Imagen</th>
+                            <th>Descripción</th>
+                            <th>Latitud</th>
+                            <th>Longitud</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in eventoDocs)
+                        {
+                            <tr>
+
+                                @if (doc.PathDoc.Contains(".jpg") || doc.PathDoc.Contains(".jpeg"))
+                                {
+                                    <td>
+                                        <img src="@doc.PathDoc" width="150" height="150">
+                                    </td>
+
+                                }
+                                else
+                                {
+                                    <td>-</td>
+                                }
+                                <td>@doc.Descripcion</td>
+                                <td>@doc.Latitud</td>
+                                <td>@doc.Longitud</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+</div>
+
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    public EventoDTO evento { get; set; } = new EventoDTO();
+
+    public IEnumerable<EventoDocDTO> eventoDocs { get; set; } = new List<EventoDocDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        evento = await Service.Get(id);
+        eventoDocs = evento.Documentos;
+    }
+
+    async Task Descargar()
+    {
+        await JS.InvokeVoidAsync("generarPdf",
+        "informeEvento",
+        $"Informe_Evento_{evento.Id}_{evento.DescEvento}",
+        "portrait");
+    }
+}

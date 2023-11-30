@@ -1,0 +1,107 @@
+﻿@page "/items"
+@inject NavigationManager NavigationManager
+@inject ItemsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-end mb-1" id="header">
+    <a href="item/crear" class="btn btn-sm btn-success">
+        <i class="oi oi-plus"></i>
+    </a>
+</div>
+
+@if (items == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (items.Count() == 0)
+{
+    <p>No se encontraron items.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>
+                        @if (item.Unidad != null)
+                        {
+                            @(@$"{@item.CodItem} - {@item.DescItem} ({@item.Unidad.CodUnidad})")
+                        }
+                        else
+                        {
+                            @(@$"{@item.CodItem} - {@item.DescItem}")
+                        }
+                        <br>
+                        <a class="btn btn-sm btn-outline-warning m-1"
+                   href="item/editar/@item.Id"
+                   data-toggle="tooltip" data-placement="bottom" title="Editar">
+                            <i class="oi oi-pencil"></i>
+                        </a>
+                        <button @onclick="@(() => BorrarItem(item.Id))"
+                        class="btn btn-sm btn-outline-danger m-1"
+                        data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                        <a class="btn btn-sm btn-outline-primary m-1"
+                   href="itemscontroles/@item.Id" data-toggle="tooltip"
+                   data-placement="bottom" title="Controles">
+                            Controles
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    public IEnumerable<ItemDTO> items { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetItems();
+    }
+
+    private async Task BorrarItem(int id)
+    {
+        var item = await Service.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar item {item.DescItem}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await Service.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Item eliminado", "success");
+                await GetItems();
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar item", "error");
+            }
+        }
+    }
+
+    private async Task GetItems()
+    {
+        items = await Service.GetFull();
+    }
+}

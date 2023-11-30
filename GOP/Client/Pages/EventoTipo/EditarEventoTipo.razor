@@ -1,0 +1,47 @@
+﻿@page "/eventotipo/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject EventoTipoService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Tipo Evento</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormEventoTipo evento="@evento" TextBotonSubmit="Guardar" OnValidSubmit="@EditEvento"/>
+    </div>
+</div>
+
+@code {
+    public EventoTipoDTO evento = new EventoTipoDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        evento = await Service.Get(id);
+    }
+
+    async Task EditEvento()
+    {
+        var respuesta = await Service.Put(evento);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/tipoeventos");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar evento: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/tipoeventos");
+    }
+}

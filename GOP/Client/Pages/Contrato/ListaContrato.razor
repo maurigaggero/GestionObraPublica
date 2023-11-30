@@ -1,0 +1,201 @@
+﻿@page "/contratos"
+@inject NavigationManager NavigationManager
+@inject ContratoService Service
+@inject UserService UserService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-end mb-1" id="header">
+    <a href="contrato/crear" class="btn btn-sm btn-success">
+        <i class="oi oi-plus"></i>
+    </a>
+</div>
+
+@if (contratos == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (contratos.Count() == 0)
+{
+    <p>No se encontraron contratos.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Contratos</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contrato in contratos)
+            {
+                <tr>
+                    <td data-toggle="tooltip" data-placement="bottom" title="@contrato.Caratula">
+                        @contrato.NumExpediente - @contrato.Zona.CodigoZona - @contrato.Empresa.Nombre <br>
+                        @if (authState != null && !authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1" || x.Value.ToUpper() == "CONSULTA2"))
+                        {
+                            <a class="btn btn-sm btn-outline-warning m-1"
+                       href="contrato/editar/@contrato.Id"
+                       data-toggle="tooltip" data-placement="bottom"
+                       title="Editar">
+                                <i class="oi oi-pencil"></i>
+                            </a>
+                            <button @onclick="@(() => BorrarContrato(contrato.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        }
+                        <a class="btn btn-sm btn-outline-info m-1" href="contrato/mediciones/@contrato.Id" data-toggle="tooltip" data-placement="bottom" title="Ver mediciones"><i class="oi oi-eye"></i></a>
+                        <a href="/contratoitems/@contrato.Id"
+                   class="btn btn-sm btn-outline-success m-1"
+                   data-toggle="tooltip"
+                   data-placement="bottom"
+                   title="Ver Items">
+                            <i class="oi oi-list"></i>
+                        </a>
+                        <a href="/contratoestructura/@contrato.Id"
+                   class="btn btn-sm btn-outline-primary m-1"
+                   data-toggle="tooltip"
+                   data-placement="bottom"
+                   title="Ver Estructuras">
+                            <i class="oi oi-caret-top"></i>
+                        </a>
+                        <a href="/certificados/@contrato.Id"
+                   class="btn btn-sm btn-outline-warning m-1"
+                   data-toggle="tooltip"
+                   data-placement="bottom"
+                   title="Ver Certificados">
+                            <i class="oi oi-book"></i>
+                        </a>
+                        <a href="/contratodocs/@contrato.Id"
+                   class="btn btn-sm btn-outline-dark m-1"
+                   data-toggle="tooltip"
+                   data-placement="bottom"
+                   title="Ver Documentos">
+                            <i class="oi oi-document"></i>
+                        </a>
+                        <button @onclick="@(() => GenerarExcel(contrato))"
+                        class="btn btn-sm btn-success m-1"
+                        data-toggle="tooltip"
+                        data-placement="bottom"
+                        title="Generar Excel">
+                            <i class="oi oi-spreadsheet"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+        @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public IEnumerable<ContratoDTO> contratos { get; set; }
+    public IEnumerable<ContratoDTO> contratosPag { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    AuthenticationState authState;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        authState = await UserService.GetAuthenticationStateAsync();
+
+        await GetContratos();
+        await Paginar(false);
+    }
+
+    private async Task BorrarContrato(int id)
+    {
+        var contrato = await Service.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar contrato {contrato.Descripcion}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await Service.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Contrato eliminado", "success");
+                await GetContratos();
+                await Paginar(false);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar contrato", "error");
+            }
+        }
+    }
+
+    private async Task GetContratos()
+    {
+        contratos = await Service.GetFull();
+        contratosPag = contratos;
+    }
+
+    async Task Paginar(bool next)
+    {
+        contratos = contratosPag;
+        int cantidadPorPagina = 10;
+        registros = contratos.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        contratos = contratos.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+
+    public int IsDownloadStarted { get; set; } = 0;
+
+    protected async Task GenerarExcel(ContratoDTO contrato)
+    {
+        IsDownloadStarted = 1;
+        StateHasChanged();
+
+        var response = await Service.GenerarExcel(contrato.Id);
+        response.EnsureSuccessStatusCode();
+
+        var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+        var filename = "Contrato Provisorio-"
+                       + $"{contrato.Caratula.Substring(0, 2)}-"
+                       + DateTime.Now.ToString("yyyyMMdd HHmm") + ".xlsx";  //Sergio
+        await JS.InvokeAsync<object>("saveAsFile", filename, Convert.ToBase64String(fileBytes));
+
+        IsDownloadStarted = 2;
+    }
+}

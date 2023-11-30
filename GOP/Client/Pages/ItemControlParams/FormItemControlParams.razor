@@ -1,0 +1,177 @@
+﻿@using GOP.Client.Pages.ItemControles
+@inject ItemControlesService ItemControlesService
+@inject UnidadesService UnidadesService
+@inject IJSRuntime JS
+
+
+<EditForm Model="@itemControlParam" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Parametro</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@itemControlParam.Parametro" placeholder="Parametro" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.Parametro)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@itemControlParam.Descripción" placeholder="Descripción" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.Descripción)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Unidad</label>
+            <div class="col">
+                <div class="input-group">
+                    @if (unidades != null)
+                    {
+                        <InputSelect @bind-Value="itemControlParam.UnidadId" class="form-control">
+                            <option selected value="">Seleccione unidad</option>
+                            @foreach (var unidad in unidades)
+                            {
+                            <option value="@unidad.Id">@unidad.DescUnidad</option>
+                            }
+                    </InputSelect>
+                        <button type="button" class="btn btn-primary btn-block" @onclick="NuevaUnidad" data-toggle="tooltip" data-placement="left" title="Si la unidad no aparece en la lista haga click aqui para darla de alta">
+                            <i class="oi oi-plus"></i>
+                        </button>
+                    }
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.UnidadId)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Tipo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputSelect @bind-Value="itemControlParam.TipoParam" class="form-control" @onclick="@ValidacionesTipoParam">
+                        @foreach (var tipo in Enum.GetValues(typeof(TipoParam)))
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </InputSelect>
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.TipoParam)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden="@ocultaMinimoMaximo">
+            <label class="col-form-label">Minimo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="@itemControlParam.ValorMinimo" placeholder="Valor mínimo" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.ValorMinimo)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden="@ocultaMinimoMaximo">
+            <label class="col-form-label">Maximo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="@itemControlParam.ValorMaximo" placeholder="Valor máximo" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.ValorMaximo)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Item Control</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="@itemControlParam.ItemControlId" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => itemControlParam.ItemControlId)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+<!--Modal Unidad-->
+<div class="modal fade" id="modalCrearUnidad2" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Unidad</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <GOP.Client.Pages.Unidad.FormUnidad TextBotonSubmit="Guardar" OnValidSubmit="CrearUnidad" unidad="unidad"></GOP.Client.Pages.Unidad.FormUnidad>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ItemControlParamDTO itemControlParam { get; set; } = new ItemControlParamDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public bool Editar { get; set; }
+
+    IEnumerable<UnidadDTO> unidades = new List<UnidadDTO>();
+
+    UnidadDTO unidad = new UnidadDTO();
+
+    public bool ocultaMinimoMaximo { get; set; } = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        unidades = await UnidadesService.GetFull();
+    }
+
+    async Task CrearUnidad()
+    {
+        var respuesta = await UnidadesService.Post(unidad);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearUnidad2");
+            unidades = await UnidadesService.GetFull();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear unidad: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    void ValidacionesTipoParam()
+    {
+        ocultaMinimoMaximo = true;
+
+        if (itemControlParam.TipoParam == TipoParam.Comparar)
+        {
+           ocultaMinimoMaximo = false;
+        }
+    }
+
+    void NuevaUnidad()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearUnidad2");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+}

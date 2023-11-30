@@ -1,0 +1,164 @@
+﻿@page "/itemscontroles/{id:int}"
+@inject NavigationManager NavigationManager
+@inject ItemControlesService Service
+@inject ItemsService ItemsService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-1" id="header">
+    @if (item != null)
+    {
+        <h5>@item.DescItem </h5>
+    }
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+        <a href="itemcontroles/crear/@item.Id" class="btn btn-sm btn-success">
+            <i class="oi oi-plus"></i>
+        </a>
+    </div>
+
+</div>
+
+
+@if (controles == null)
+{
+    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
+        <div class="spinner-grow" role="status"></div>
+    </div>
+}
+else if (controles.Count() == 0)
+{
+    <p>No se encontraron controles.</p>
+}
+else
+{
+    <table class="table table-responsive table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Codigo</th>
+                <th>Descripcion</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var control in controles)
+            {
+                <tr>
+                    <td>@control.CodControl</td>
+                    <td>@control.DescControl</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-warning m-1" href="itemcontroles/editar/@control.Id"data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+                        <button @onclick="@(() => BorrarControl(control.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                        <a class="btn btn-sm btn-outline-info m-1" href="/itemscontrolparams/@control.Id" data-toggle="tooltip" data-placement="bottom" title="Parametros">Parametros</a>
+                        <a class="btn btn-sm btn-outline-success m-1" href="/itemcontroldocs/@control.Id" data-toggle="tooltip" data-placement="bottom" title="Documentos">Documentos</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex justify-content-between mb-1" id="footer">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+            <li class="page-item"><button class="page-link">@pagina</button></li>
+            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+        </ul>
+    </nav>
+    <div>
+        @registros registros totales
+    </div>
+</div>
+
+
+@code {
+    public ItemDTO item = new ItemDTO();
+
+    [Parameter] public int id { get; set; }
+
+    public IEnumerable<ItemControlDTO> controles { get; set; }
+    public IEnumerable<ItemControlDTO> controlesPag { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetItem();
+        await GetControles();
+        await Paginar(false);
+    }
+
+    private async Task BorrarControl(int id)
+    {
+        var item = await Service.Get(id);
+
+        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+            $"¿Desea eliminar control {item.DescControl}?", "warning");
+        if (confirmacion)
+        {
+            var respuesta = await Service.Baja(id);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Control eliminado", "success");
+                await GetControles();
+                await Paginar(false);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar control", "error");
+            }
+        }
+    }
+
+    private async Task GetItem()
+    {
+        item = await ItemsService.Get(id);
+    }
+
+    private async Task GetControles()
+    {
+        controles = await Service.GetByItem(id);
+        controlesPag = controles;
+    }
+
+    async Task Paginar(bool next)
+    {
+        controles = controlesPag;
+        int cantidadPorPagina = 10;
+        registros = controles.Count();
+        decimal total;
+
+        if (registros < cantidadPorPagina)
+            total = pagina;
+        else
+        {
+            if (registros % cantidadPorPagina == 0)
+                total = registros / cantidadPorPagina;
+            else
+                total = (registros / cantidadPorPagina) + 1;
+        }
+
+        if (!next && pagina > 1) pagina--;
+
+        if (next && pagina < total) pagina++;
+
+        controles = controles.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/items");
+    }
+}

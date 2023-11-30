@@ -1,0 +1,67 @@
+﻿@page "/certificado/editar/{id:int}"
+@inject NavigationManager NavigationManager
+@inject CertificadoService Service
+@inject ContratoService ContratoService
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <h4><b>Editar Certificado</b></h4>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+        <button @onclick="@(() => GenerarDefinitivo(certificado.ContratoId))" class="btn btn-sm btn-warning">
+            <i class="oi oi-arrow-circle-check"></i> Definitivo
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormCertificado certificado="@certificado" contrato="contrato" TextBotonSubmit="Guardar" OnValidSubmit="@Editar" />
+    </div>
+</div>
+
+@code {
+    public CertificadoDTO certificado = new CertificadoDTO();
+
+    public ContratoDTO contrato = new ContratoDTO();
+
+    [Parameter] public int id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        certificado = await Service.GetByIdNoFul(id);
+
+        contrato = await ContratoService.GetNoFull(certificado.ContratoId);
+    }
+
+    async Task Editar()
+    {
+        var respuesta = await Service.Put(certificado);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/certificados/{certificado.ContratoId}");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo editar certificado: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    async Task GenerarDefinitivo(int id)
+    {
+        var respuesta = await Service.Definitivo(id);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("simple", "¡Éxito!", "Certificado definitivo generado correctamente.", "success");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear certificado definitivo: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/certificados/{certificado.ContratoId}");
+    }
+}

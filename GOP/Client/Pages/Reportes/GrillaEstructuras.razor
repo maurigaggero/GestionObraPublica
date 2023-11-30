@@ -1,0 +1,97 @@
+﻿@using GOP.Shared.DTOs
+@inject NavigationManager NavigationManager
+@inject ContratoEstructuraService Service
+@inject CertificadoItemsService CertItemService
+@inject IJSRuntime JS
+
+<br>
+
+<BlazoredTypeahead SearchMethod="GetEstructuras"
+                   ConvertMethod="Convertir"
+                   @bind-Value="estructuraId"
+                   placeholder="Buscar Estructura">
+    <SelectedTemplate Context="estructuraId">
+        @{
+            var selected = ValorSeleccionado(estructuraId);
+
+            <text>@selected?.CodEstructura, @selected?.DescEstructura</text>
+        }
+    </SelectedTemplate>
+    <ResultTemplate Context="estructura">
+        @estructura.CodEstructura, @estructura.DescEstructura
+    </ResultTemplate>
+</BlazoredTypeahead>
+
+
+@if (estructuraId.HasValue)
+{
+    <button @onclick="@(() => ReporteItemsPorEstructura(estructuraId))"
+        class="btn btn-sm btn-success m-1"
+        data-toggle="tooltip"
+        data-placement="bottom"
+        title="Generar Excel">
+        <i class="oi oi-spreadsheet"></i> Items Por Estructura
+    </button>
+}
+
+
+@code {
+
+    public ContratoEstructuraDTO estructura { get; set; } = new ContratoEstructuraDTO();
+    public IEnumerable<ContratoEstructuraDTO> estructuras = new List<ContratoEstructuraDTO>();
+
+    public int? estructuraId { get; set; }
+
+    public int pagina { get; set; } = 1;
+
+    public int registros { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        estructuras = await Service.GetFull();
+    }
+
+    private async Task<IEnumerable<ContratoEstructuraDTO>> GetEstructuras(string searchText)
+    {
+        return await Task.FromResult(estructuras.Where(x => x.DescEstructura.ToUpper().Contains(searchText.ToUpper())).ToList());
+    }
+
+    private int? Convertir(ContratoEstructuraDTO estructura)
+    {
+        return estructura?.Id;
+    }
+
+    private ContratoEstructuraDTO ValorSeleccionado(int? id)
+    {
+        return estructuras.FirstOrDefault(p => p.Id == id);
+    }
+
+    public int IsDownloadStarted { get; set; } = 0;
+
+    protected async Task ReporteItemsPorEstructura(int? estructuraId)
+    {
+        IsDownloadStarted = 1;
+        StateHasChanged();
+
+        if (estructuraId.HasValue)
+        {
+            var response = await CertItemService.GenerarExcelItemsPorEstructura(estructuraId.Value);
+            response.EnsureSuccessStatusCode();
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+            var filename = "Items Medidos Estructura_" + estructuraId + "_"
+                                   + DateTime.Now.ToString("yyyyMMdd HHmm") + ".xlsx";
+
+            await JS.InvokeAsync<object>("saveAsFile", filename, Convert.ToBase64String(fileBytes));
+
+            IsDownloadStarted = 2;
+        }
+    }
+
+}

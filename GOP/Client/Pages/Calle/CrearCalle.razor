@@ -1,0 +1,47 @@
+﻿@page "/calle/crear"
+@inject NavigationManager NavigationManager
+@inject CalleService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear calle</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormCalle calle="@calle" TextBotonSubmit="Guardar" OnValidSubmit="@NuevaCalle" />
+    </div>
+</div>
+
+@code {
+    public CalleDTO calle = new CalleDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task NuevaCalle()
+    {
+        var respuesta = await Service.Post(calle);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/calles");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear calle.", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/calles");
+    }
+}

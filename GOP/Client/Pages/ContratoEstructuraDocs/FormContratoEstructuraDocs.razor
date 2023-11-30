@@ -1,0 +1,80 @@
+﻿@inject ContratoDocsService Service
+@using System.IO
+@using System.Net.Http.Headers
+@inject IJSRuntime JS
+
+<EditForm Model="@contratoEstructuraDocs" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="contratoEstructuraDocs.Descripcion" placeholder="Descripción" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoEstructuraDocs.Descripcion)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden="@ocultaCarga">
+            <label class="col-form-label">Archivo</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputFile OnChange="@HandleSelected" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoEstructuraDocs.File)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Observaciones</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputTextArea @bind-Value="contratoEstructuraDocs.Obs" placeholder="Observaciones" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoEstructuraDocs.Obs)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2" hidden>
+            <label class="col-form-label">Contrato Estructura</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputNumber @bind-Value="contratoEstructuraDocs.ContratoEstructuraId" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => contratoEstructuraDocs.ContratoEstructuraId)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+@code {
+    [Parameter] public ContratoEstructuraDocDTO contratoEstructuraDocs { get; set; } = new ContratoEstructuraDocDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public bool ocultaCarga { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+
+    }
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles();
+
+        var documento = await Utils.FileToBase64(files);
+        contratoEstructuraDocs.PathDoc = documento.PathDoc;
+        contratoEstructuraDocs.Extension = documento.Extension;
+        contratoEstructuraDocs.File = documento.File;
+    }
+
+}

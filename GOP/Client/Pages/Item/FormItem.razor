@@ -1,0 +1,120 @@
+﻿@using GOP.Client.Pages.Unidad
+@inject ItemsService ItemsService
+@inject UnidadesService UnidadesService
+@inject IJSRuntime JS
+
+<EditForm Model="@item" OnValidSubmit="@OnValidSubmit">
+    <div class="form-field m-1">
+        <div class="form-group row p-2">
+            <label class="col-form-label">Código</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@item.CodItem" placeholder="Código de Item" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => item.CodItem)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Descripción</label>
+            <div class="col">
+                <div class="input-group">
+                    <InputText @bind-Value="@item.DescItem" placeholder="Descripción de Item" class="form-control" />
+                </div>
+                <ValidationMessage For="@(() => item.DescItem)" />
+            </div>
+        </div>
+
+        <div class="form-group row p-2">
+            <label class="col-form-label">Unidad</label>
+            <div class="col">
+                <div class="input-group">
+                    @if (unidades != null)
+                    {
+                        <InputSelect @bind-Value="item.UnidadId" class="form-control">
+                            <option selected value="">Seleccione unidad</option>
+                            @foreach (var unidad in unidades)
+                            {
+                            <option value="@unidad.Id">@unidad.DescUnidad</option>
+                            }
+                    </InputSelect>
+                        <button type="button" class="btn btn-primary btn-block" @onclick="NuevaUnidad" data-toggle="tooltip" data-placement="left" title="Si la unidad no aparece en la lista haga click aqui para darla de alta">
+                            <i class="oi oi-plus"></i>
+                        </button>
+                    }
+                </div>
+                <ValidationMessage For="@(() => item.UnidadId)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-block btn-success">
+                <i class="oi oi-check "></i>
+                <text style="color:white"> @TextBotonSubmit</text>
+            </button>
+        </div>
+    </div>
+
+
+    <DataAnnotationsValidator />
+</EditForm>
+
+
+<!--Modal Unidad-->
+<div class="modal fade" id="modalCrearUnidad" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Crear Unidad</h6>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="m-3">
+                    <FormUnidad TextBotonSubmit="Guardar" OnValidSubmit="CrearUnid" unidad="unidad"></FormUnidad>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public ItemDTO item { get; set; } = new ItemDTO();
+    [Parameter] public string TextBotonSubmit { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    IEnumerable<UnidadDTO> unidades = new List<UnidadDTO>();
+
+    UnidadDTO unidad = new UnidadDTO();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        unidades = await UnidadesService.GetFull();
+    }
+
+    async Task CrearUnid()
+    {
+        var respuesta = await UnidadesService.Post(unidad);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("ocultaModal", "#modalCrearUnidad");
+            unidades = await UnidadesService.GetFull();
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear unidad.", "error");
+    }
+
+    void NuevaUnidad()
+    {
+        JS.InvokeVoidAsync("levantaModal", "#modalCrearUnidad");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("levantaTooltips");
+    }
+
+}

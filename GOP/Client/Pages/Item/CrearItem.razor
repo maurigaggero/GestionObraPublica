@@ -1,0 +1,47 @@
+﻿@page "/item/crear"
+@inject NavigationManager NavigationManager
+@inject ItemsService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear item</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormItem item="@item" TextBotonSubmit="Guardar" OnValidSubmit="@CrearItems" />
+    </div>
+</div>
+
+@code {
+    public ItemDTO item = new ItemDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task CrearItems()
+    {
+        var respuesta = await Service.Post(item);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/items");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear item: {respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/items");
+    }
+}

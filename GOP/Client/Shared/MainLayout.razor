@@ -1,0 +1,41 @@
+﻿@using GOP.Client.Services.Auth
+@inherits LayoutComponentBase
+@inject UserService Service
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject RenovadorToken Renovador
+
+<div class="page">
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidebar" style="z-index: 2">
+                <NavMenu />
+            </div>
+        </Authorized>
+    </AuthorizeView>
+
+    <main>
+        <AuthorizeView>
+            <Authorized>
+                @*<div class="top-row px-4">
+                    <EnlacesLogin />
+                </div>*@
+            </Authorized>
+        </AuthorizeView>
+
+        <article class="content px-4" style="z-index: 1">
+            @Body
+        </article>
+    </main>
+
+</div>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        Renovador.Iniciar();
+    }
+
+}

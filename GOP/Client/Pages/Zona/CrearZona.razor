@@ -1,0 +1,47 @@
+﻿@page "/zona/crear"
+@inject NavigationManager NavigationManager
+@inject ZonasService Service
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <h4><b>Crear zona</b></h4>
+    </div>
+    <div>
+        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
+            <i class="oi oi-arrow-circle-left"></i> Atrás
+        </button>
+    </div>
+</div>
+
+<div class="card m-1">
+    <div class="card-body">
+        <FormZona zona="@zona" TextBotonSubmit="Guardar" OnValidSubmit="@CrearZonas" />
+    </div>
+</div>
+
+@code {
+    public ZonaDTO zona = new ZonaDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    async Task CrearZonas()
+    {
+        var respuesta = await Service.Post(zona);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/zonas");
+        }
+        else
+            await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo crear zona:{respuesta.Content.ReadAsStringAsync().Result}", "error");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/zonas");
+    }
+}
