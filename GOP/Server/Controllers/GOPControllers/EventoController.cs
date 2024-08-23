@@ -64,36 +64,31 @@ namespace GOP.Server.Controllers.GOPControllers
         Roles = "Admin, BaseDatos, HyS, Zona1, Zona2, Frente, Consulta1, Consulta2")]
         public async Task<ActionResult<List<EventoDTO>>> GetEvento([FromQuery] FiltroEventoDTO filtro) //CON INCLUDE
         {
-            try
+
+            List<Evento> lista = await repositorio.GetEventos(filtro);
+
+            HttpContext.Response.Headers.Add("Registros", lista.Count.ToString());
+
+            string UserRol = ObtenerRol();
+
+            if (UserRol == "HyS")
             {
-                List<Evento> lista = await repositorio.GetEventos(filtro);
-
-                HttpContext.Response.Headers.Add("Registros", lista.Count.ToString());
-
-                string UserRol = ObtenerRol();
-
-                if (UserRol == "HyS")
-                {
-                    lista = lista.Where(x => x.Tipo.CodTipo.Contains("HYS")).ToList();
-                }
-                else if (UserRol == "Zona2" 
-                         || UserRol == "Frente" 
-                         || UserRol == "Consulta1")
-                {
-                    lista = lista.Where(x => !x.Tipo.CodTipo.Contains("HYS")).ToList();
-                }
-                //else if (UserRol == "Zona1" || UserRol == "Zona2" ||
-                //        UserRol == "Frente" || UserRol == "Consulta1")
-                //{
-
-                    List<EventoDTO> result = mapper.Map<List<EventoDTO>>(lista);
-
-                return result;
+                lista = lista.Where(x => x.Tipo.CodTipo.Contains("HYS")).ToList();
             }
-            catch (Exception)
+            else if (UserRol == "Zona2" 
+                        || UserRol == "Frente" 
+                        || UserRol == "Consulta1")
             {
-                throw;
+                lista = lista.Where(x => !x.Tipo.CodTipo.Contains("HYS")).ToList();
             }
+            //else if (UserRol == "Zona1" || UserRol == "Zona2" ||
+            //        UserRol == "Frente" || UserRol == "Consulta1")
+            //{
+
+                List<EventoDTO> result = mapper.Map<List<EventoDTO>>(lista);
+
+            return result;
+
         }
 
         [HttpGet("Reportes")]
