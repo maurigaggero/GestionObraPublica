@@ -6,12 +6,14 @@ using GOP.Repositorio.Repos;
 using GOP.Server.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -26,6 +28,14 @@ builder.Services.AddDbContext<BDContext>(
     sqlServerOptions => sqlServerOptions.UseNetTopologySuite()
     )
 );
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { new CultureInfo("es-ES"), new CultureInfo("es-ES") };
+    options.DefaultRequestCulture = new RequestCulture("es-ES");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+});
 
 builder.Services.AddIdentity<GOPUser, IdentityRole>()
                 .AddEntityFrameworkStores<BDContext>()

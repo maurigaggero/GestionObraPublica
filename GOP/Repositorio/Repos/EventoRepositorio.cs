@@ -44,8 +44,8 @@ namespace GOP.Repositorio.Repos
                                     .Include(e => e.Tipo)
                                     .OrderByDescending(e => e.Fecha).ThenBy(e => e.Tipo.CodTipo)
                                     .Where(i => i.EstadoRegistro == 0
-                                    && Convert.ToDateTime(i.Fecha.Date.ToString("dd/MM/yyyy")) >= Convert.ToDateTime(filtro.FechaDesde).Date
-                                    && Convert.ToDateTime(i.Fecha.Date.ToString("dd/MM/yyyy")) <= Convert.ToDateTime(filtro.FechaHasta).Date)
+                                    && i.Fecha.Date >= Convert.ToDateTime(filtro.FechaDesde).Date
+                                    && i.Fecha.Date <= Convert.ToDateTime(filtro.FechaHasta).Date)
                                     .AsQueryable();
 
                 if (filtro.TipoId.HasValue && filtro.TipoId != 0)
