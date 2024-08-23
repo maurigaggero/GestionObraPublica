@@ -47,7 +47,7 @@
                     <EditForm Model="@credenciales" OnValidSubmit="OnValidSubmit">
                         <div class="form-group m-2">
                             <label>Correo</label>
-                            <InputText type="email" @bind-Value="credenciales.Email" class="form-control" placeholder="example@mail.com" />
+                            <InputText type="email" @bind-Value="credenciales.Email" class="form-control" autocomplete="email" placeholder="correo@mail.com" />
                             <ValidationMessage For="@(() => credenciales.Email)" />
                         </div>
 
