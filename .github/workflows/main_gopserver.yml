@@ -46,3 +46,6 @@ jobs:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.GOPServer_1939 }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: Azure Login
+      uses: Azure/login@v2.1.1
+            
