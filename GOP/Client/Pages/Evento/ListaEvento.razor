@@ -147,8 +147,8 @@ else
 
     int? TipoId { get; set; }
 
-    DateTime FechaDesde { get; set; } = DateTime.Now.AddDays(-15);
-    DateTime FechaHasta { get; set; } = DateTime.Now;
+    DateTime FechaDesde { get; set; } = DateTime.Today.Date.AddDays(-15);
+    DateTime FechaHasta { get; set; } = DateTime.Today.Date;
 
     bool flagFiltro { get; set; } = false;
 
