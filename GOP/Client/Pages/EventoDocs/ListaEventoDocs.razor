@@ -3,6 +3,7 @@
 @inject EventoDocsService Service
 @inject EventoService EventoService
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
     @if (evento != null)

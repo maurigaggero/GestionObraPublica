@@ -2,6 +2,8 @@
 @inject NavigationManager NavigationManager
 @inject CertificadoItemsService CertificadoItemsService
 @inject IJSRuntime JS
+@attribute [Authorize]
+
 
 <div class="d-flex justify-content-between mb-1" id="header">
     @if (itemCertificado != null && itemCertificado.Certificado != null)

@@ -3,6 +3,7 @@
 @inject FrentesObraService Service
 @inject ZonasService ZonaService
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
     @if (zona != null)

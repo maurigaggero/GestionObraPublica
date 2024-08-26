@@ -3,6 +3,7 @@
 @inject ContratoItemControlesService ContratoItemControlesService
 @inject ContratoItemControlesParamsService Service
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
     @if (contratoItemControl != null)

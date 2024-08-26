@@ -2,6 +2,8 @@
 @inject NavigationManager NavigationManager
 @inject CertificadoItemControlDocsService Service
 @inject IJSRuntime JS
+@attribute [Authorize]
+
 
 <div class="d-flex justify-content-between mb-3">
     @if (cItemControlDocs != null)

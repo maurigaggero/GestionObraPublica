@@ -3,6 +3,8 @@
 @inject CertificadoService Service
 @inject CertificadoItemsService ItemService
 @inject IJSRuntime JS
+@attribute [Authorize]
+
 
 <div class="d-flex justify-content-between mb-1" id="header">
     @if (certificado != null && certificado.Contrato != null)

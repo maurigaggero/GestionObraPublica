@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject CertificadoItemsService Service
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-3">
     @* @if (certificadoItem.ItemContrato != null && certificadoItem.Certificado != null)

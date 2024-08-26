@@ -6,6 +6,7 @@
 @inject UserService UserService
 @inject HttpClient Http
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
     @if (@caratula != "")
