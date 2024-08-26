@@ -29,12 +29,16 @@ builder.Services.AddDbContext<BDContext>(
     )
 );
 
+builder.Services.AddControllersWithViews()
+			.AddViewLocalization()
+			.AddDataAnnotationsLocalization();
+
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-    var supportedCultures = new[] { new CultureInfo("es-ES"), new CultureInfo("es-ES") };
-    options.DefaultRequestCulture = new RequestCulture("es-ES");
-    options.SupportedCultures = supportedCultures;
-    options.SupportedUICultures = supportedCultures;
+	var supportedCultures = new[] { new CultureInfo("es-ES") }; // Región fija: España
+	options.DefaultRequestCulture = new RequestCulture("es-ES");
+	options.SupportedCultures = supportedCultures;
+	options.SupportedUICultures = supportedCultures;
 });
 
 builder.Services.AddIdentity<GOPUser, IdentityRole>()
@@ -196,6 +200,8 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+
+app.UseRequestLocalization();
 #endregion
 
 app.Run();
