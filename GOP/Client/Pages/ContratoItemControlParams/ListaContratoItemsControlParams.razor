@@ -1,4 +1,5 @@
 ﻿@page "/contratoitemscontrolparams/{id:int}"
+@using GOP.Client.Pages.Helpers
 @inject NavigationManager NavigationManager
 @inject ContratoItemControlesService ContratoItemControlesService
 @inject ContratoItemControlesParamsService Service
@@ -20,9 +21,7 @@
 
 @if (contratoItemControl.Parametros == null)
 {
-    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
-        <div class="spinner-grow" role="status"></div>
-    </div>
+  <LoadingSpinner></LoadingSpinner>
 }
 else if (contratoItemControl.Parametros.Count() == 0)
 {

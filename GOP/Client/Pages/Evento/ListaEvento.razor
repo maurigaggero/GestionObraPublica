@@ -1,4 +1,5 @@
 ﻿@page "/eventos"
+@using GOP.Client.Pages.Helpers
 @using GOP.Shared.DTOs
 @inject NavigationManager NavigationManager
 @inject EventoService Service
@@ -9,256 +10,253 @@
 @attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
-    <h5>Eventos</h5>
-    @if (eventos != null)
-    {
-        <div class="d-flex justify-content-start mb-1" id="footer">
-            <nav aria-label="Page navigation example">
-                <ul class="pagination pagination-sm">
-                    <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)"> <b>ant.</b> </button></li>
-                    <li class="page-item"><button class="page-link">@pagina</button></li>
-                    <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)"> <b>sig.</b> </button></li>
-                </ul>
-            </nav>
-        </div>
-    }
-    <div>
-        <button @onclick="@(() => Paginar(false))" class="btn btn-sm btn-primary m-1" data-toggle="tooltip" data-placement="bottom" title="Buscar">
-            <i class="oi oi-magnifying-glass"></i>
-        </button>
-        @if (authState != null 
-            && !authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1" 
-                                            || x.Value.ToUpper() == "CONSULTA2"))
-        {
-            <a href="eventos/reporte" class="btn btn-sm btn-warning" data-toggle="tooltip" data-placement="bottom" title="Reporte">
-                <i class="oi oi-document"></i>
-            </a>
-            <a href="evento/crear" class="btn btn-sm btn-success" data-toggle="tooltip" data-placement="bottom" title="Nuevo">
-                <i class="oi oi-plus"></i>
-            </a>
-        }
-    </div>
+	<h5>Eventos</h5>
+	@if (eventos != null)
+	{
+		<div class="d-flex justify-content-start mb-1" id="footer">
+			<nav aria-label="Page navigation example">
+				<ul class="pagination pagination-sm">
+					<li class="page-item "><button class="page-link" @onclick="() => Paginar(false)"> <b>ant.</b> </button></li>
+					<li class="page-item"><button class="page-link">@pagina</button></li>
+					<li class="page-item"><button class="page-link" @onclick="() => Paginar(true)"> <b>sig.</b> </button></li>
+				</ul>
+			</nav>
+		</div>
+	}
+	<div>
+		<button @onclick="@(() => Paginar(false))" class="btn btn-sm btn-primary m-1" data-toggle="tooltip" data-placement="bottom" title="Buscar">
+			<i class="oi oi-magnifying-glass"></i>
+		</button>
+		@if (authState != null
+				&& !authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1"
+				|| x.Value.ToUpper() == "CONSULTA2"))
+		{
+			<a href="eventos/reporte" class="btn btn-sm btn-warning" data-toggle="tooltip" data-placement="bottom" title="Reporte">
+				<i class="oi oi-document"></i>
+			</a>
+			<a href="evento/crear" class="btn btn-sm btn-success" data-toggle="tooltip" data-placement="bottom" title="Nuevo">
+				<i class="oi oi-plus"></i>
+			</a>
+		}
+	</div>
 </div>
 
 <div class="input-group d-flex justify-content-between mb-1" id="filtros">
-    <input class="form-control form-control-sm" type="date" @bind="@FechaDesde" @oninput="FiltroFechaDesde" />
-    <input class="form-control form-control-sm" type="date" @bind="@FechaHasta" @oninput="FiltroFechaHasta" />
+	<input class="form-control form-control-sm" type="date" @bind="@FechaDesde" @oninput="FiltroFechaDesde" />
+	<input class="form-control form-control-sm" type="date" @bind="@FechaHasta" @oninput="FiltroFechaHasta" />
 </div>
 
 <div class="input-group d-flex justify-content-between mb-1" id="filtros2">
-    @if (tipos != null && contratos != null)
-    {
-        <select class="form-control form-control-sm" @bind="@TipoId" @oninput="FiltroTipo">
-            <option selected value="0">Tipo Evento</option>
-            @foreach (var tipo in tipos)
-            {
-                <option value="@tipo.Id">@tipo.DescTipo</option>
-            }
-        </select>
+	@if (tipos != null && contratos != null)
+	{
+		<select class="form-control form-control-sm" @bind="@TipoId" @oninput="FiltroTipo">
+			<option selected value="0">Tipo Evento</option>
+			@foreach (var tipo in tipos)
+			{
+				<option value="@tipo.Id">@tipo.DescTipo</option>
+			}
+		</select>
 
-        <select class="form-control form-control-sm" @bind="@ContratoId" @oninput="FiltroContrato">
-            <option selected value="0">Contrato</option>
-            @foreach (var contrato in contratos)
-            {
-                <option value="@contrato.Id">@contrato.NumExpediente - @contrato.Caratula</option>
-            }
-        </select>
-    }
+		<select class="form-control form-control-sm" @bind="@ContratoId" @oninput="FiltroContrato">
+			<option selected value="0">Contrato</option>
+			@foreach (var contrato in contratos)
+			{
+				<option value="@contrato.Id">@contrato.NumExpediente - @contrato.Caratula</option>
+			}
+		</select>
+	}
 </div>
 
 
 @if (eventos == null)
 {
-    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
-        <div class="col-auto spinner-grow" role="status"></div>
-        <p class="col-auto">Obteniendo eventos...</p>
-    </div>
+	<LoadingSpinner Texto="Obteniendo eventos.."></LoadingSpinner>
 }
 else if (eventos.Count() == 0)
 {
-    <p>No se encontraron eventos.</p>
+	<p>No se encontraron eventos.</p>
 }
 else
 {
-    <table class="table table-responsive table-hover">
-        <thead class="table-dark">
-            <tr>
-                @if (flagFiltro)
-                {
-                    <th>Buscar Eventos de @FechaDesde.ToShortDateString() a @FechaHasta.ToShortDateString()</th>
-                }
-                else
-                {
-                    <th>Eventos de @FechaDesde.ToShortDateString() a @FechaHasta.ToShortDateString()</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @if (flagFiltro)
-            {
-                <p>Aplicar filtros.</p>
-            }
-            else
-            {
-                @foreach (var evento in eventos)
-                {
-                    <tr>
-                        <td>
-                            @evento.Fecha.ToString("dd/MM/yy") - @evento.Numero - @evento.Título <br>
-                            @if (authState != null && !authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1" || x.Value.ToUpper() == "CONSULTA2"))
-                            {
-                                <a class="btn btn-sm btn-outline-warning m-1" href="evento/editar/@evento.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
-                                <button @onclick="@(() => BorrarEvento(evento.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
-                                    <i class="oi oi-trash"></i>
-                                </button>
-                            }
-                            <a class="btn btn-sm btn-outline-primary m-1" href="/evento/informe/@evento.Id" data-toggle="tooltip" data-placement="bottom" title="Generar informe"><i class="oi oi-eye"></i></a>
-                            <a class="btn btn-sm btn-outline-dark m-1" href="/eventodocs/@evento.Id" data-toggle="tooltip" data-placement="bottom" title="Ver Documentos"><i class="oi oi-document"></i></a>
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
+	<table class="table table-responsive table-hover">
+		<thead class="table-dark">
+			<tr>
+				@if (flagFiltro)
+				{
+					<th>Buscar Eventos de @FechaDesde.ToShortDateString() a @FechaHasta.ToShortDateString()</th>
+				}
+				else
+				{
+					<th>Eventos de @FechaDesde.ToShortDateString() a @FechaHasta.ToShortDateString()</th>
+				}
+			</tr>
+		</thead>
+		<tbody>
+			@if (flagFiltro)
+			{
+				<p>Aplicar filtros.</p>
+			}
+			else
+			{
+				@foreach (var evento in eventos)
+				{
+					<tr>
+						<td>
+							@evento.Fecha.ToString("dd/MM/yy") - @evento.Numero - @evento.Título <br>
+							@if (authState != null && !authState.User.Claims.Any(x => x.Value.ToUpper() == "CONSULTA1" || x.Value.ToUpper() == "CONSULTA2"))
+							{
+								<a class="btn btn-sm btn-outline-warning m-1" href="evento/editar/@evento.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+								<button @onclick="@(() => BorrarEvento(evento.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+									<i class="oi oi-trash"></i>
+								</button>
+							}
+							<a class="btn btn-sm btn-outline-primary m-1" href="/evento/informe/@evento.Id" data-toggle="tooltip" data-placement="bottom" title="Generar informe"><i class="oi oi-eye"></i></a>
+							<a class="btn btn-sm btn-outline-dark m-1" href="/eventodocs/@evento.Id" data-toggle="tooltip" data-placement="bottom" title="Ver Documentos"><i class="oi oi-document"></i></a>
+						</td>
+					</tr>
+				}
+			}
+		</tbody>
+	</table>
 }
 
 <div class="d-flex justify-content-start mb-1" id="footer">
-    <nav aria-label="Page navigation example">
-        <ul class="pagination pagination-sm">
-            <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
-            <li class="page-item"><button class="page-link">@pagina</button></li>
-            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
-        </ul>
-    </nav>
+	<nav aria-label="Page navigation example">
+		<ul class="pagination pagination-sm">
+			<li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+			<li class="page-item"><button class="page-link">@pagina</button></li>
+			<li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+		</ul>
+	</nav>
 </div>
 
 @code {
-    public IEnumerable<EventoDTO> eventos { get; set; }
+	public IEnumerable<EventoDTO> eventos { get; set; }
 
-    public IEnumerable<EventoTipoDTO> tipos { get; set; }
+	public IEnumerable<EventoTipoDTO> tipos { get; set; }
 
-    public IEnumerable<ContratoDTO> contratos { get; set; }
+	public IEnumerable<ContratoDTO> contratos { get; set; }
 
-    public int pagina { get; set; } = 1;
+	public int pagina { get; set; } = 1;
 
-    public int registros { get; set; }
+	public int registros { get; set; }
 
-    int? ContratoId { get; set; }
+	int? ContratoId { get; set; }
 
-    int? TipoId { get; set; }
+	int? TipoId { get; set; }
 
-    DateTime FechaDesde { get; set; } = DateTime.Today.Date.AddDays(-15);
-    DateTime FechaHasta { get; set; } = DateTime.Today.Date;
+	DateTime FechaDesde { get; set; } = DateTime.Today.Date.AddDays(-15);
+	DateTime FechaHasta { get; set; } = DateTime.Today.Date;
 
-    bool flagFiltro { get; set; } = false;
+	bool flagFiltro { get; set; } = false;
 
-    AuthenticationState authState;
+	AuthenticationState authState;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await JS.InvokeVoidAsync("levantaTooltips");
-    }
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await JS.InvokeVoidAsync("levantaTooltips");
+	}
 
-    protected override async Task OnInitializedAsync()
-    {
-        authState = await UserService.GetAuthenticationStateAsync();
+	protected override async Task OnInitializedAsync()
+	{
+		authState = await UserService.GetAuthenticationStateAsync();
 
-        contratos = await ContratoService.GetFull();
-        tipos = await TipoService.GetFull();
+		contratos = await ContratoService.GetFull();
+		tipos = await TipoService.GetFull();
 
-        var fdesde = await JS.InvokeAsync<string>("sessionStorage.getItem", "FechaDesde");
-        var fhasta = await JS.InvokeAsync<string>("sessionStorage.getItem", "FechaHasta");
-        var contrato = await JS.InvokeAsync<string>("sessionStorage.getItem", "ContratoId");
-        var tipo = await JS.InvokeAsync<string>("sessionStorage.getItem", "TipoId");
+		var fdesde = await JS.InvokeAsync<string>("sessionStorage.getItem", "FechaDesde");
+		var fhasta = await JS.InvokeAsync<string>("sessionStorage.getItem", "FechaHasta");
+		var contrato = await JS.InvokeAsync<string>("sessionStorage.getItem", "ContratoId");
+		var tipo = await JS.InvokeAsync<string>("sessionStorage.getItem", "TipoId");
 
-        if (!string.IsNullOrEmpty(fdesde))
-        {
-            FechaDesde = Convert.ToDateTime(fdesde);
-        }
-        if (!string.IsNullOrEmpty(fhasta))
-        {
-            FechaHasta = Convert.ToDateTime(fhasta);
-        }
-        if (!string.IsNullOrEmpty(contrato))
-        {
-            ContratoId = Convert.ToInt32(contrato);
-        }
-        if (!string.IsNullOrEmpty(tipo))
-        {
-            TipoId = Convert.ToInt32(tipo);
-        }
+		if (!string.IsNullOrEmpty(fdesde))
+		{
+			FechaDesde = Convert.ToDateTime(fdesde);
+		}
+		if (!string.IsNullOrEmpty(fhasta))
+		{
+			FechaHasta = Convert.ToDateTime(fhasta);
+		}
+		if (!string.IsNullOrEmpty(contrato))
+		{
+			ContratoId = Convert.ToInt32(contrato);
+		}
+		if (!string.IsNullOrEmpty(tipo))
+		{
+			TipoId = Convert.ToInt32(tipo);
+		}
 
-        await Paginar(false);
-    }
+		await Paginar(false);
+	}
 
-    async Task FiltroFechaDesde(ChangeEventArgs e)
-    {
-        await JS.InvokeVoidAsync("sessionStorage.setItem", "FechaDesde", e.Value.ToString());
-        FechaDesde = Convert.ToDateTime(e.Value.ToString());
-        flagFiltro = true;
-    }
+	async Task FiltroFechaDesde(ChangeEventArgs e)
+	{
+		await JS.InvokeVoidAsync("sessionStorage.setItem", "FechaDesde", e.Value.ToString());
+		FechaDesde = Convert.ToDateTime(e.Value.ToString());
+		flagFiltro = true;
+	}
 
-    async Task FiltroFechaHasta(ChangeEventArgs e)
-    {
-        await JS.InvokeVoidAsync("sessionStorage.setItem", "FechaHasta", e.Value.ToString());
-        FechaHasta = Convert.ToDateTime(e.Value.ToString());
-        flagFiltro = true;
-    }
+	async Task FiltroFechaHasta(ChangeEventArgs e)
+	{
+		await JS.InvokeVoidAsync("sessionStorage.setItem", "FechaHasta", e.Value.ToString());
+		FechaHasta = Convert.ToDateTime(e.Value.ToString());
+		flagFiltro = true;
+	}
 
-    async Task FiltroContrato(ChangeEventArgs e)
-    {
-        await JS.InvokeVoidAsync("sessionStorage.setItem", "ContratoId", e.Value.ToString());
-        ContratoId = Convert.ToInt32(e.Value.ToString());
-        flagFiltro = true;
-    }
+	async Task FiltroContrato(ChangeEventArgs e)
+	{
+		await JS.InvokeVoidAsync("sessionStorage.setItem", "ContratoId", e.Value.ToString());
+		ContratoId = Convert.ToInt32(e.Value.ToString());
+		flagFiltro = true;
+	}
 
-    async Task FiltroTipo(ChangeEventArgs e)
-    {
-        await JS.InvokeVoidAsync("sessionStorage.setItem", "TipoId", e.Value.ToString());
-        TipoId = Convert.ToInt32(e.Value.ToString());
-        flagFiltro = true;
-    }
+	async Task FiltroTipo(ChangeEventArgs e)
+	{
+		await JS.InvokeVoidAsync("sessionStorage.setItem", "TipoId", e.Value.ToString());
+		TipoId = Convert.ToInt32(e.Value.ToString());
+		flagFiltro = true;
+	}
 
-    private async Task BorrarEvento(int id)
-    {
-        var obj = await Service.Get(id);
+	private async Task BorrarEvento(int id)
+	{
+		var obj = await Service.Get(id);
 
-        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
-            $"¿Desea eliminar evento {obj.DescEvento}?", "warning");
-        if (confirmacion)
-        {
-            var respuesta = await Service.Baja(id);
+		var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+			$"¿Desea eliminar evento {obj.DescEvento}?", "warning");
+		if (confirmacion)
+		{
+			var respuesta = await Service.Baja(id);
 
-            if (respuesta.IsSuccessStatusCode)
-            {
-                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Evento eliminado", "success");
-                await Paginar(false);
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar evento", "error");
-            }
-        }
-    }
+			if (respuesta.IsSuccessStatusCode)
+			{
+				await JS.InvokeVoidAsync("simple", "¡Éxito!", "Evento eliminado", "success");
+				await Paginar(false);
+			}
+			else
+			{
+				await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar evento", "error");
+			}
+		}
+	}
 
-    async Task Paginar(bool next)
-    {
-        if (!next && pagina > 1) pagina--;
+	async Task Paginar(bool next)
+	{
+		if (!next && pagina > 1) pagina--;
 
-        if (next) pagina++;
+		if (next) pagina++;
 
-        FiltroEventoDTO filtradoPag = new FiltroEventoDTO()
-            {
-                FechaDesde = FechaDesde.ToString(),
-                FechaHasta = FechaHasta.ToString(),
-                TipoId = TipoId,
-                ContratoId = ContratoId,
-                Pagina = pagina,
-                RegistrosPorPagina = 10
-            };
-        eventos = await Service.GetFull(filtradoPag);
-        registros = eventos.Count();
-        flagFiltro = false;
-    }
+		FiltroEventoDTO filtradoPag = new FiltroEventoDTO()
+			{
+				FechaDesde = FechaDesde.ToString(),
+				FechaHasta = FechaHasta.ToString(),
+				TipoId = TipoId,
+				ContratoId = ContratoId,
+				Pagina = pagina,
+				RegistrosPorPagina = 10
+			};
+		eventos = await Service.GetFull(filtradoPag);
+		registros = eventos.Count();
+		flagFiltro = false;
+	}
 
 }

@@ -1,4 +1,5 @@
 ﻿@page "/estructuras"
+@using GOP.Client.Pages.Helpers
 @inject NavigationManager NavigationManager
 @inject EstructuraService Service
 @inject IJSRuntime JS
@@ -16,9 +17,7 @@
 
 @if (estructuras == null)
 {
-    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
-        <div class="spinner-grow" role="status"></div>
-    </div>
+    <LoadingSpinner></LoadingSpinner>
 }
 else if (estructuras.Count() == 0)
 {

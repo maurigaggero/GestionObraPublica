@@ -1,138 +1,137 @@
 ﻿@page "/calles"
+@using GOP.Client.Pages.Helpers
 @inject NavigationManager NavigationManager
 @inject CalleService Service
 @inject IJSRuntime JS
 @attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
-    <h5>Calles</h5>
-    <div>
-        <a href="calle/crear" class="btn btn-sm btn-success">
-            <i class="oi oi-plus"></i>
-        </a>
-    </div>
+	<h5>Calles</h5>
+	<div>
+		<a href="calle/crear" class="btn btn-sm btn-success">
+			<i class="oi oi-plus"></i>
+		</a>
+	</div>
 </div>
 
 
 @if (calles == null)
 {
-    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
-        <div class="spinner-grow" role="status"></div>
-    </div>
+	<LoadingSpinner></LoadingSpinner>
 }
 else if (calles.Count() == 0)
 {
-    <p>No se encontraron calles.</p>
+	<p>No se encontraron calles.</p>
 }
 else
 {
-    <table class="table table-responsive table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Nombre</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var calle in calles)
-            {
-                <tr>
-                    <td>@calle.NombreCalle</td>
-                    <td>
-                        <a class="btn btn-sm btn-outline-warning m-1" href="calle/editar/@calle.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
-                        <button @onclick="@(() => BorrarCalle(calle.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
-                            <i class="oi oi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+	<table class="table table-responsive table-hover">
+		<thead class="table-dark">
+			<tr>
+				<th>Nombre</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var calle in calles)
+			{
+				<tr>
+					<td>@calle.NombreCalle</td>
+					<td>
+						<a class="btn btn-sm btn-outline-warning m-1" href="calle/editar/@calle.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+						<button @onclick="@(() => BorrarCalle(calle.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+							<i class="oi oi-trash"></i>
+						</button>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
 }
 
 <div class="d-flex justify-content-between mb-1" id="footer">
-    <nav aria-label="Page navigation example">
-        <ul class="pagination pagination-sm">
-            <li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
-            <li class="page-item"><button class="page-link">@pagina</button></li>
-            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
-        </ul>
-    </nav>
-    <div>
-        @registros registros totales
-    </div>
+	<nav aria-label="Page navigation example">
+		<ul class="pagination pagination-sm">
+			<li class="page-item "><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+			<li class="page-item"><button class="page-link">@pagina</button></li>
+			<li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+		</ul>
+	</nav>
+	<div>
+		@registros registros totales
+	</div>
 </div>
 
 
 @code {
-    public IEnumerable<CalleDTO> calles { get; set; }
-    public IEnumerable<CalleDTO> callesPag { get; set; }
+	public IEnumerable<CalleDTO> calles { get; set; }
+	public IEnumerable<CalleDTO> callesPag { get; set; }
 
-    public int pagina { get; set; } = 1;
+	public int pagina { get; set; } = 1;
 
-    public int registros { get; set; }
+	public int registros { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await JS.InvokeVoidAsync("levantaTooltips");
-    }
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await JS.InvokeVoidAsync("levantaTooltips");
+	}
 
-    protected override async Task OnInitializedAsync()
-    {
-        await GetCalles();
-        await Paginar(false);
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		await GetCalles();
+		await Paginar(false);
+	}
 
-    private async Task BorrarCalle(int id)
-    {
-        var obj = await Service.Get(id);
+	private async Task BorrarCalle(int id)
+	{
+		var obj = await Service.Get(id);
 
-        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
-            $"¿Desea eliminar calle {obj.NombreCalle}?", "warning");
-        if (confirmacion)
-        {
-            var respuesta = await Service.Baja(id);
+		var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+			$"¿Desea eliminar calle {obj.NombreCalle}?", "warning");
+		if (confirmacion)
+		{
+			var respuesta = await Service.Baja(id);
 
-            if (respuesta.IsSuccessStatusCode)
-            {
-                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Calle eliminada", "success");
-                await GetCalles();
-                await Paginar(false);
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar calle", "error");
-            }
-        }
-    }
+			if (respuesta.IsSuccessStatusCode)
+			{
+				await JS.InvokeVoidAsync("simple", "¡Éxito!", "Calle eliminada", "success");
+				await GetCalles();
+				await Paginar(false);
+			}
+			else
+			{
+				await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar calle", "error");
+			}
+		}
+	}
 
-    private async Task GetCalles()
-    {
-        calles = await Service.GetFull();
-        callesPag = calles;
-    }
+	private async Task GetCalles()
+	{
+		calles = await Service.GetFull();
+		callesPag = calles;
+	}
 
-    async Task Paginar(bool next)
-    {
-        calles = callesPag;
-        int cantidadPorPagina = 10;
-        registros = calles.Count();
-        decimal total;
+	async Task Paginar(bool next)
+	{
+		calles = callesPag;
+		int cantidadPorPagina = 10;
+		registros = calles.Count();
+		decimal total;
 
-        if (registros < cantidadPorPagina)
-            total = pagina;
-        else
-        {
-            if (registros % cantidadPorPagina == 0)
-                total = registros / cantidadPorPagina;
-            else
-                total = (registros / cantidadPorPagina) + 1;
-        }
+		if (registros < cantidadPorPagina)
+			total = pagina;
+		else
+		{
+			if (registros % cantidadPorPagina == 0)
+				total = registros / cantidadPorPagina;
+			else
+				total = (registros / cantidadPorPagina) + 1;
+		}
 
-        if (!next && pagina > 1) pagina--;
+		if (!next && pagina > 1) pagina--;
 
-        if (next && pagina < total) pagina++;
+		if (next && pagina < total) pagina++;
 
-        calles = calles.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
-    }
+		calles = calles.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+	}
 }

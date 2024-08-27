@@ -1,4 +1,5 @@
 ﻿@page "/contratoestructuradocs/{id:int}"
+@using GOP.Client.Pages.Helpers
 @inject NavigationManager NavigationManager
 @inject ContratoEstructuraService ContratoEstructuraService
 @inject ContratoEstructuraDocsService Service
@@ -6,170 +7,168 @@
 @attribute [Authorize]
 
 <div class="d-flex justify-content-between mb-1" id="header">
-    @if (contratoEstructura != null && contratoEstructura.Contrato != null)
-    {
-        <h5> Documentos de: @contratoEstructura.Contrato.Descripcion - Estructura: @contratoEstructura.DescEstructura.</h5>
-    }
-    <div>
-        <button @onclick="@Volver" class="btn btn-sm btn-secondary">
-            <i class="oi oi-arrow-circle-left"></i> Atrás
-        </button>
-        <a href="contratoestructuradocs/crear/@contratoEstructura.Id" class="btn btn-sm btn-success">
-            <i class="oi oi-plus"></i>
-        </a>
-    </div>
+	@if (contratoEstructura != null && contratoEstructura.Contrato != null)
+	{
+		<h5> Documentos de: @contratoEstructura.Contrato.Descripcion - Estructura: @contratoEstructura.DescEstructura.</h5>
+	}
+	<div>
+		<button @onclick="@Volver" class="btn btn-sm btn-secondary">
+			<i class="oi oi-arrow-circle-left"></i> Atrás
+		</button>
+		<a href="contratoestructuradocs/crear/@contratoEstructura.Id" class="btn btn-sm btn-success">
+			<i class="oi oi-plus"></i>
+		</a>
+	</div>
 </div>
 
 
 @if (contratoEstructura.Documentos == null)
 {
-    <div class="vh-100 row m-0 text-center align-items-center justify-content-center">
-        <div class="spinner-grow" role="status"></div>
-    </div>
+	<LoadingSpinner></LoadingSpinner>
 }
 else if (contratoEstructura.Documentos.Count() == 0)
 {
-    <p>No se encontraron documentos.</p>
+	<p>No se encontraron documentos.</p>
 }
 else
 {
-    <table class="table table-responsive table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Descripcion</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var estructura in contratoEstructuraDocs)
-            {
-                <tr>
-                    <td>@estructura.Descripcion</td>
-                    <td>
-                        <a class="btn btn-sm btn-outline-warning m-1" href="contratoestructuradocs/editar/@estructura.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
-                        <button @onclick="@(() => BorrarContrato(estructura.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
-                            <i class="oi oi-trash"></i>
-                        </button>
-                        <button @onclick="@(() => Ver(estructura.Id))" class="btn btn-sm btn-outline-info m-1" data-toggle="tooltip" data-placement="bottom" title="Descargar">
-                            <i class="oi oi-eye"></i>
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+	<table class="table table-responsive table-hover">
+		<thead class="table-dark">
+			<tr>
+				<th>Descripcion</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var estructura in contratoEstructuraDocs)
+			{
+				<tr>
+					<td>@estructura.Descripcion</td>
+					<td>
+						<a class="btn btn-sm btn-outline-warning m-1" href="contratoestructuradocs/editar/@estructura.Id" data-toggle="tooltip" data-placement="bottom" title="Editar"><i class="oi oi-pencil"></i></a>
+						<button @onclick="@(() => BorrarContrato(estructura.Id))" class="btn btn-sm btn-outline-danger m-1" data-toggle="tooltip" data-placement="bottom" title="Borrar">
+							<i class="oi oi-trash"></i>
+						</button>
+						<button @onclick="@(() => Ver(estructura.Id))" class="btn btn-sm btn-outline-info m-1" data-toggle="tooltip" data-placement="bottom" title="Descargar">
+							<i class="oi oi-eye"></i>
+						</button>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
 }
 
 <div class="d-flex justify-content-between mb-1" id="footer">
-    <nav aria-label="Page navigation example">
-        <ul class="pagination pagination-sm">
-            <li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
-            <li class="page-item"><button class="page-link">@pagina</button></li>
-            <li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
-        </ul>
-    </nav>
-    <div>
-        @registros registros totales
-    </div>
+	<nav aria-label="Page navigation example">
+		<ul class="pagination pagination-sm">
+			<li class="page-item"><button class="page-link" @onclick="() => Paginar(false)">Anterior</button></li>
+			<li class="page-item"><button class="page-link">@pagina</button></li>
+			<li class="page-item"><button class="page-link" @onclick="() => Paginar(true)">Siguiente</button></li>
+		</ul>
+	</nav>
+	<div>
+		@registros registros totales
+	</div>
 </div>
 
 
 @code {
-    public ContratoEstructuraDTO contratoEstructura = new ContratoEstructuraDTO();
+	public ContratoEstructuraDTO contratoEstructura = new ContratoEstructuraDTO();
 
-    [Parameter] public int id { get; set; }
+	[Parameter] public int id { get; set; }
 
-    public IEnumerable<ContratoEstructuraDocDTO> contratoEstructuraDocs { get; set; }
-    public IEnumerable<ContratoEstructuraDocDTO> contratoEstructuraDocsPag { get; set; }
+	public IEnumerable<ContratoEstructuraDocDTO> contratoEstructuraDocs { get; set; }
+	public IEnumerable<ContratoEstructuraDocDTO> contratoEstructuraDocsPag { get; set; }
 
-    public int pagina { get; set; } = 1;
+	public int pagina { get; set; } = 1;
 
-    public int registros { get; set; }
+	public int registros { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await JS.InvokeVoidAsync("levantaTooltips");
-    }
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		await JS.InvokeVoidAsync("levantaTooltips");
+	}
 
-    protected override async Task OnInitializedAsync()
-    {
-        await GetContrato();
-        await Paginar(false);
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		await GetContrato();
+		await Paginar(false);
+	}
 
-    private async Task BorrarContrato(int id)
-    {
-        var item = await Service.Get(id);
+	private async Task BorrarContrato(int id)
+	{
+		var item = await Service.Get(id);
 
-        var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
-            $"¿Desea eliminar documento {item.Descripcion}?", "warning");
-        if (confirmacion)
-        {
-            var respuesta = await Service.Baja(id);
+		var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
+			$"¿Desea eliminar documento {item.Descripcion}?", "warning");
+		if (confirmacion)
+		{
+			var respuesta = await Service.Baja(id);
 
-            if (respuesta.IsSuccessStatusCode)
-            {
-                await JS.InvokeVoidAsync("simple", "¡Éxito!", "Documento eliminado", "success");
-                await GetContrato();
-                await Paginar(false);
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar documento", "error");
-            }
-        }
-    }
-
-
-    private async Task GetContrato()
-    {
-        contratoEstructura = await ContratoEstructuraService.Get(id);
-
-        contratoEstructuraDocs = await Service.GetFull(id);
-        contratoEstructuraDocsPag = contratoEstructuraDocs;
-    }
-
-    async Task Paginar(bool next)
-    {
-        contratoEstructuraDocs = contratoEstructuraDocsPag;
-        int cantidadPorPagina = 10;
-        registros = contratoEstructuraDocs.Count();
-        decimal total;
-
-        if (registros < cantidadPorPagina)
-            total = pagina;
-        else
-        {
-            if (registros % cantidadPorPagina == 0)
-                total = registros / cantidadPorPagina;
-            else
-                total = (registros / cantidadPorPagina) + 1;
-        }
-
-        if (!next && pagina > 1) pagina--;
-
-        if (next && pagina < total) pagina++;
-
-        contratoEstructuraDocs = contratoEstructuraDocs.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
-    }
-
-    private void Volver()
-    {
-        NavigationManager.NavigateTo($"/contratoestructura/{contratoEstructura.ContratoId}");
-    }
+			if (respuesta.IsSuccessStatusCode)
+			{
+				await JS.InvokeVoidAsync("simple", "¡Éxito!", "Documento eliminado", "success");
+				await GetContrato();
+				await Paginar(false);
+			}
+			else
+			{
+				await JS.InvokeVoidAsync("simple", "Error", $"Error {((decimal)respuesta.StatusCode)}. No se pudo eliminar documento", "error");
+			}
+		}
+	}
 
 
-    private async Task Ver(int id)
-    {
-        try
-        {
-            var documento = await Service.Get(id);
+	private async Task GetContrato()
+	{
+		contratoEstructura = await ContratoEstructuraService.Get(id);
 
-            await JS.InvokeVoidAsync("ver", documento.PathDoc);
-        }
-        catch (Exception ex)
-        {
-            await JS.InvokeVoidAsync("simple", "Error", $"No se pudo encontrar el archivo especificado. {ex}", "error");
-        }
-    }
+		contratoEstructuraDocs = await Service.GetFull(id);
+		contratoEstructuraDocsPag = contratoEstructuraDocs;
+	}
+
+	async Task Paginar(bool next)
+	{
+		contratoEstructuraDocs = contratoEstructuraDocsPag;
+		int cantidadPorPagina = 10;
+		registros = contratoEstructuraDocs.Count();
+		decimal total;
+
+		if (registros < cantidadPorPagina)
+			total = pagina;
+		else
+		{
+			if (registros % cantidadPorPagina == 0)
+				total = registros / cantidadPorPagina;
+			else
+				total = (registros / cantidadPorPagina) + 1;
+		}
+
+		if (!next && pagina > 1) pagina--;
+
+		if (next && pagina < total) pagina++;
+
+		contratoEstructuraDocs = contratoEstructuraDocs.Skip((pagina - 1) * cantidadPorPagina).Take(cantidadPorPagina);
+	}
+
+	private void Volver()
+	{
+		NavigationManager.NavigateTo($"/contratoestructura/{contratoEstructura.ContratoId}");
+	}
+
+
+	private async Task Ver(int id)
+	{
+		try
+		{
+			var documento = await Service.Get(id);
+
+			await JS.InvokeVoidAsync("ver", documento.PathDoc);
+		}
+		catch (Exception ex)
+		{
+			await JS.InvokeVoidAsync("simple", "Error", $"No se pudo encontrar el archivo especificado. {ex}", "error");
+		}
+	}
 }
