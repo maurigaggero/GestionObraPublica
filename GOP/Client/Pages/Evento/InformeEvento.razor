@@ -53,6 +53,10 @@
 
                 <dt>Posición</dt>
                 <dd>Latitud: @evento.Latitud - Longitud: @evento.Longitud</dd>
+
+                <dt>Mapa</dt>
+                <dd><div id="map" style="height: 200px;width: 100%;"></div></dd>
+              
             </dl>
         </div>
 
@@ -113,6 +117,11 @@
     {
         evento = await Service.Get(id);
         eventoDocs = evento.Documentos;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeAsync<string>("iniciarMapa", evento.Latitud, evento.Longitud);
     }
 
     async Task Descargar()
