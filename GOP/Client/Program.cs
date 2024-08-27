@@ -53,5 +53,3 @@ builder.Services.AddScoped<AuthenticationStateProvider, UserService>(
     provider => provider.GetRequiredService<UserService>());
 
 await builder.Build().RunAsync();
-
-///prueba CI
