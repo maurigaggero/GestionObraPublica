@@ -32,7 +32,53 @@
 		<CascadingAuthenticationState>
 			<PageTitle>Not found</PageTitle>
 			<LayoutView Layout="@typeof(MainLayout)">
-				<p role="alert">404. Ruta incorrecta. Pagina no encontrada</p>
+				<style>
+					#fondo {
+						font-family: 'Roboto', sans-serif;
+						text-align: center;
+						background-color: #ffffff;
+						color: #333;
+						padding: 50px;
+					}
+
+					.container {
+						max-width: 800px;
+						margin: 0 auto;
+					}
+
+					h1 {
+						font-size: 120px;
+						color: #e74c3c;
+						margin: 0;
+					}
+
+					p {
+						font-size: 24px;
+					}
+
+					.button {
+						display: inline-block;
+						padding: 10px 20px;
+						font-size: 18px;
+						color: #fff;
+						background-color: #3498db;
+						text-decoration: none;
+						border-radius: 5px;
+						margin-top: 20px;
+					}
+
+						.button:hover {
+							background-color: #2980b9;
+						}
+
+				</style>
+				<div id="fondo">
+					<div class="container">
+						<h1><b>404</b></h1>
+						<p>La página que estás buscando no existe.</p>
+						<a href="/" class="button">Volver a Inicio</a>
+					</div>
+				</div>
 			</LayoutView>
 		</CascadingAuthenticationState>
 	</NotFound>
