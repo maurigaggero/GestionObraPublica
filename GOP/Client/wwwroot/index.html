@@ -14,7 +14,7 @@
 
 <body>
     <div id="app">
-      <LoadingSpinner></LoadingSpinner>
+        <LoadingSpinner></LoadingSpinner>
     </div>
 
     <div id="georeferencia" hidden>
@@ -22,11 +22,28 @@
         <input type="number" step="any" value="0" id="longitud" class="form-control" />
     </div>
 
-    <div id="blazor-error-ui">
-        Ocurrio un error inesperado.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
+
+    <div class="modal" tabindex="-1" id="blazor-error-ui">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error</h5>
+                    <button class="dismiss btn btn-outline-danger">🗙</button>
+                </div>
+                <div class="modal-body d-flex justify-content-center">
+                    <text>
+                        <h3><span class="oi oi-circle-x" style="color:darkred"></span> Tenemos un problema técnico.</h3>
+                        <p>Por favor, vuelva a intentar más tarde.</p>
+                    </text>
+
+                </div>
+                <div class="modal-footer">
+                    <button href="" class="reload btn btn-secondary">Reintentar</button>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script src="_framework/blazor.webassembly.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
