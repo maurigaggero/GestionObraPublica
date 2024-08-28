@@ -50,20 +50,19 @@
 					<EditForm Model="@credenciales" OnValidSubmit="OnValidSubmit">
 						<div class="form-group m-2">
 							<label>Correo</label>
-							<InputText type="email" @bind-Value="credenciales.Email" class="form-control" autocomplete="email" placeholder="correo@mail.com" />
+							<InputText type="email" @bind-Value="credenciales.Email" class="form-control form-control-sm" autocomplete="email" placeholder="correo@mail.com" />
 							<ValidationMessage For="@(() => credenciales.Email)" />
 						</div>
 
 						<div class="form-group m-2">
 							<label>Contraseña</label>
-							<InputText @bind-Value="credenciales.Psw" type="password" class="form-control" placeholder="Contraseña" />
+							<InputText @bind-Value="credenciales.Psw" type="password" class="form-control form-control-sm" placeholder="Contraseña" />
 							<ValidationMessage For="@(() => credenciales.Psw)" />
 						</div>
 
 						<div class="d-flex justify-content-center form-group mt-4">
-							<button class=" btn btn-primary" type="submit">
+							<button class=" btn btn-sm btn-primary" type="submit">
 								Iniciar Sesión <span class="sr-only" hidden="@logueando">...</span> <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden="@logueando"></span>
-								
 							</button>
 						</div>
 
