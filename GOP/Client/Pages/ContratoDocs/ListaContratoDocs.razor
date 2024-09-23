@@ -122,7 +122,7 @@ else
 
     private async Task GetContrato()
     {
-        contrato = await ContratoService.Get(id);
+        contrato = await ContratoService.GetNoFull(id);
         
         contratoDocs = await Service.GetFull(id);
         contratoDocsPag = contratoDocs;

@@ -220,7 +220,7 @@
         {
             certificados = await CertificadoService.GetFull(evento.ContratoId.Value);
 
-            ContratoDTO contrato = await ContratoService.Get(evento.ContratoId.Value);
+            ContratoDTO contrato = await ContratoService.GetNoFull(evento.ContratoId.Value);
             evento.EmpresaId = contrato.EmpresaId;
             evento.ZonaId = contrato.ZonaId;
 
@@ -246,7 +246,7 @@
         {
             certificados = await CertificadoService.GetFull(evento.ContratoId.Value);
 
-            ContratoDTO contrato = await ContratoService.Get(evento.ContratoId.Value);
+            ContratoDTO contrato = await ContratoService.GetNoFull(evento.ContratoId.Value);
             evento.EmpresaId = contrato.EmpresaId;
             evento.ZonaId = contrato.ZonaId;
 

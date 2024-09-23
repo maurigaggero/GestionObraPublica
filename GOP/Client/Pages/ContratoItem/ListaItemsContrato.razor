@@ -97,7 +97,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        contrato = await Service.Get(contratoId);
+        contrato = await Service.GetNoFull(contratoId);
         await GetItems();
         await Paginar(false);
     }
@@ -139,7 +139,7 @@ else
 
     async Task AgregarItems(int id)
     {
-        var contrato = await Service.Get(id);
+        var contrato = await Service.GetNoFull(id);
 
         NavigationManager.NavigateTo($"/contratoitem/crear/{@contrato.Id}");
     }

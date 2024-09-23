@@ -128,7 +128,7 @@ else
 
     private async Task BorrarContrato(int id)
     {
-        var contrato = await Service.Get(id);
+        var contrato = await Service.GetNoFull(id);
 
         var confirmacion = await JS.InvokeAsync<bool>("confirmar", "Eliminar",
             $"¿Desea eliminar contrato {contrato.Descripcion}?", "warning");

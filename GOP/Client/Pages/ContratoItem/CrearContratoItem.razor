@@ -52,7 +52,7 @@
         contratoItem.ContratoId = contratoId;
 
         var items = (List<ItemDTO>)await ItemService.GetFull();
-        var contrato = await ContratoService.Get(contratoId);
+        var contrato = await ContratoService.GetNoFull(contratoId);
 
         foreach (var cItem in contrato.ContratoItems)
         {
