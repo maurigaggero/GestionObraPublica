@@ -47,8 +47,7 @@ builder.Services.AddScoped<UnidadesService>()
                 .AddScoped<RenovadorToken>();
 
 builder.Services.AddAuthorizationCore();
-
-builder.Services.AddScoped<UserService>();
+ 
 builder.Services.AddScoped<AuthenticationStateProvider, UserService>(
     provider => provider.GetRequiredService<UserService>());
 

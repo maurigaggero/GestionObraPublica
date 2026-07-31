@@ -5,6 +5,7 @@ using GOP.Shared.DTOs.Entity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,8 +45,8 @@ namespace GOP.Repositorio.Repos
                                     .Include(e => e.Tipo)
                                     .OrderByDescending(e => e.Fecha).ThenBy(e => e.Tipo.CodTipo)
                                     .Where(i => i.EstadoRegistro == 0
-                                    && i.Fecha.Date >= Convert.ToDateTime(filtro.FechaDesde).Date
-                                    && i.Fecha.Date <= Convert.ToDateTime(filtro.FechaHasta).Date)
+                                    && i.Fecha.Date >= DateTime.Parse(filtro.FechaDesde, CultureInfo.InvariantCulture).Date
+                                    && i.Fecha.Date <= DateTime.Parse(filtro.FechaHasta, CultureInfo.InvariantCulture).Date)
                                     .AsQueryable();
 
                 if (filtro.TipoId.HasValue && filtro.TipoId != 0)
@@ -78,8 +79,8 @@ namespace GOP.Repositorio.Repos
                 var res = Context.Set<Evento>()
                     .Include(e => e.Tipo)
                     .Where(i => i.EstadoRegistro == 0
-                    && i.Fecha.Date >= Convert.ToDateTime(filtro.FechaDesde).Date
-                    && i.Fecha.Date <= Convert.ToDateTime(filtro.FechaHasta).Date)
+                    && i.Fecha.Date >= DateTime.Parse(filtro.FechaDesde, CultureInfo.InvariantCulture).Date
+                    && i.Fecha.Date <= DateTime.Parse(filtro.FechaHasta, CultureInfo.InvariantCulture).Date)
                     .OrderByDescending(e => e.Fecha)
                     .ThenBy(e => e.Contrato.Caratula)
                     .ThenBy(e => e.Certificado.Periodo)
@@ -92,8 +93,8 @@ namespace GOP.Repositorio.Repos
                 //                    .Include(e => e.Certificado)
                 //                    .Include(e => e.FrenteObra)
                 //                    .Where(i => i.EstadoRegistro == 0
-                //                    && i.Fecha.Date >= Convert.ToDateTime(filtro.FechaDesde).Date
-                //                    && i.Fecha.Date <= Convert.ToDateTime(filtro.FechaHasta).Date)
+                //                    && i.Fecha.Date >= DateTime.Parse(filtro.FechaDesde, CultureInfo.InvariantCulture).Date
+                //                    && i.Fecha.Date <= DateTime.Parse(filtro.FechaHasta, CultureInfo.InvariantCulture).Date)
                 //                    .OrderByDescending(e => e.Fecha)
                 //                    .OrderBy(e => e.Zona.CodigoZona)
                 //                    .OrderBy(e => e.FrenteObra.CodFrenteObra)

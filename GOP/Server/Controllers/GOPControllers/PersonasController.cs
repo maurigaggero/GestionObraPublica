@@ -25,8 +25,8 @@ namespace GOP.Server.Controllers.GOPControllers
         }
 
         [HttpGet("getfull")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme,
-        Roles = "Admin, BaseDatos, HyS, Zona1, Zona2, Frente, Consulta1, Consulta2")]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme,
+        //Roles = "Admin, BaseDatos, HyS, Zona1, Zona2, Frente, Consulta1, Consulta2")]
         public async Task<ActionResult<List<PersonaDTO>>> GetFull()
         {
             try
@@ -78,8 +78,8 @@ namespace GOP.Server.Controllers.GOPControllers
         }
 
         [HttpPost]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme,
-        Roles = "Admin, BaseDatos")]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme,
+        //Roles = "Admin, BaseDatos")]
         public async Task<ActionResult<int>> Post(PersonaDTO dto)
         {
             try

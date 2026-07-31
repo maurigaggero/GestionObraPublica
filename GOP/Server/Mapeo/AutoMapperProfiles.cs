@@ -92,8 +92,12 @@ namespace EFCorePeliculas.Servicios
             CreateMap<FrenteObraProfesional, FrenteObraProfesionalDTO>();
 
             //MODULO CONTRATO
-            CreateMap<Contrato, ContratoDTO>();
-            CreateMap<ContratoDTO, Contrato>();
+            CreateMap<Contrato, ContratoDTO>()
+                .ForMember(x => x.Zona, x => x.MapFrom(y => y.Zona))
+                .ForMember(x => x.Empresa, x => x.MapFrom(y => y.Empresa));
+            CreateMap<ContratoDTO, Contrato>()
+                .ForMember(x => x.Zona, x => x.Ignore())
+                .ForMember(x => x.Empresa, x => x.Ignore());
 
             CreateMap<ContratoDoc, ContratoDocDTO>()
                 .ForMember(x => x.Latitud, x => x.MapFrom(y => y.UbicacionDoc.Y))
@@ -103,8 +107,12 @@ namespace EFCorePeliculas.Servicios
                 .ForMember(x => x.UbicacionDoc, x => x.MapFrom(y =>
                 geometryFactory.CreatePoint(new Coordinate(y.Longitud, y.Latitud))));
 
-            CreateMap<ContratoItem, ContratoItemDTO>();
-            CreateMap<ContratoItemDTO, ContratoItem>();
+            CreateMap<ContratoItem, ContratoItemDTO>()
+                .ForMember(x => x.ContratoItemControls, x => x.Ignore());
+            CreateMap<ContratoItemDTO, ContratoItem>()
+                .ForMember(x => x.Contrato, x => x.Ignore())
+                .ForMember(x => x.Item, x => x.Ignore())
+                .ForMember(x => x.ContratoItemControls, x => x.Ignore());
 
             CreateMap<ContratoEstructura, ContratoEstructuraDTO>()
                 .ForMember(x => x.LatitudInicio, x => x.MapFrom(y => y.UbicacionInicio.Y))

@@ -2,17 +2,11 @@
 using GOP.Shared.DTOs.Identity;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
-using System.Text.Json;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using System.Security.Cryptography;
-using RTools_NTS.Util;
-using Newtonsoft.Json.Linq;
-using GOP.Client.Pages.Auth;
-using GOP.BD.Data;
+using System.Text.Json;
 
 namespace GOP.Client.Services
 {
@@ -44,7 +38,7 @@ namespace GOP.Client.Services
             var expiracion = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", EXPIRATIONTOKENKEY);
             DateTime tiempoExpiracion;
 
-            if (!DateTime.TryParse(expiracion, out tiempoExpiracion))
+            if (DateTime.TryParse(expiracion, out tiempoExpiracion))
             {
                 if (TokenExpirado(tiempoExpiracion))
                 {

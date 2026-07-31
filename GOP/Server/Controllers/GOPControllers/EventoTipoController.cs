@@ -34,9 +34,10 @@ namespace GOP.Server.Controllers.GOPControllers
             {
                 List<EventoTipo> lista = await repositorio.GetActivos();
 
-                string UserRol = HttpContext.User.Claims
+                var rolClaim = HttpContext.User.Claims
                                 .Where(claim => claim.Type == ClaimTypes.Role)
-                                .FirstOrDefault().Value;
+                                .FirstOrDefault();
+                string UserRol = rolClaim?.Value;
 
                 if (UserRol == "HyS")
                 {
@@ -72,9 +73,10 @@ namespace GOP.Server.Controllers.GOPControllers
             {
                 List<EventoTipo> lista = await repositorio.GetEventoTipos();
 
-                string UserRol = HttpContext.User.Claims
+                var rolClaim = HttpContext.User.Claims
                                 .Where(claim => claim.Type == ClaimTypes.Role)
-                                .FirstOrDefault().Value;
+                                .FirstOrDefault();
+                string UserRol = rolClaim?.Value;
 
                 if (UserRol == "HyS")
                 {

@@ -1,44 +1,49 @@
 using AutoMapper;
 using EFCorePeliculas.Servicios;
 using GOP.BD.Data;
+using GOP.BD.Data.Seeding;
 using GOP.Repositorio;
 using GOP.Repositorio.Repos;
 using GOP.Server.Helpers;
+using GOP.Shared.DTOs.Entity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 #region SERVICES
 var conn = builder.Configuration.GetConnectionString("conn");
 builder.Services.AddDbContext<BDContext>(
-    opciones => opciones.UseSqlServer(conn, 
+    opciones => opciones.UseSqlServer(conn,
     sqlServerOptions => sqlServerOptions.UseNetTopologySuite()
     )
 );
 
 builder.Services.AddControllersWithViews()
-			.AddViewLocalization()
-			.AddDataAnnotationsLocalization();
+            .AddViewLocalization()
+            .AddDataAnnotationsLocalization();
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-	var supportedCultures = new[] { new CultureInfo("es-ES") }; // Regi髇 fija: Espa馻
-	options.DefaultRequestCulture = new RequestCulture("es-ES");
-	options.SupportedCultures = supportedCultures;
-	options.SupportedUICultures = supportedCultures;
+    var supportedCultures = new[] { new CultureInfo("es-ES") }; // Regi贸n fija: Espa帽a
+    options.DefaultRequestCulture = new RequestCulture("es-ES");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
 });
 
 builder.Services.AddIdentity<GOPUser, IdentityRole>()
@@ -63,51 +68,57 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ClockSkew = TimeSpan.Zero
     });
 
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddOpenApi(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "GOP", Version = "v1" });
-
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
-        Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header
-    }
-    );
+        document.Info = new OpenApiInfo { Title = "GOP", Version = "v1", Description = "API de Gesti贸n de Obra P煤blica" };
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Ingrese el token JWT. Ejemplo: Bearer {token}"
+        };
+        return Task.CompletedTask;
+    });
+});
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-                                                  {
-                                                      {
-                                                          new OpenApiSecurityScheme
-                                                          {
-                                                              Reference = new OpenApiReference
-                                                              {
-                                                                  Type = ReferenceType.SecurityScheme,
-                                                                  Id = "Bearer"
-                                                              }
-                                                          },
-                                                          new string[]{}
-                                                      }
-                                                  }
-    );
-}
-);
+// El generador de OpenAPI (MapOpenApi/Scalar) reutiliza estas opciones (Minimal API), NO las de
+// AddControllers().AddJsonOptions() de m谩s arriba, as铆 que esto no afecta la serializaci贸n real
+// de los controllers ni el JSON que consume el Client. Solo recorta, para el schema de la
+// documentaci贸n, las propiedades de navegaci贸n "hacia atr谩s" que forman ciclos entre DTOs
+// (Contrato<->Empresa, Evento<->Contrato, etc.), evitando que el generador de OpenAPI de .NET 10
+// explote al recorrer un grafo de tipos mutuamente recursivo.
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+        .WithAddedModifier(OpenApiCycleBreaker.RemoveCyclicNavigationProperties);
+});
 
-#region INJECTION SERVICES      
+#region INJECTION SERVICES
 builder.Services.AddScoped<IRepositorio<IEntidadBase>, Repositorio<IEntidadBase>>();
 builder.Services.AddScoped<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<GeometryFactory>(NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326));
 builder.Services.AddSingleton(provider =>
-    new MapperConfiguration(config =>
+{
+    var geometryFactory = provider.GetRequiredService<GeometryFactory>();
+    var config = new MapperConfiguration(cfg =>
     {
-        var geometryFactory = provider.GetRequiredService<GeometryFactory>();
-        config.AddProfile(new AutoMapperProfiles(geometryFactory));
-    }).CreateMapper()
-);
+        // Ser expl铆cito en los mapeos y no permitir mapeos autom谩ticos no configurados
+        cfg.AllowNullCollections = true;
+        cfg.AllowNullDestinationValues = true;
+
+        cfg.AddProfile(new AutoMapperProfiles(geometryFactory));
+    });
+
+    return config.CreateMapper();
+});
 
 
 //persona
@@ -171,10 +182,45 @@ builder.Services.AddAuthorization(opciones =>
 
 var app = builder.Build();
 
+app.MapDefaultEndpoints();
+
+// Ejecutar seeding de datos en Development
+if (app.Environment.IsDevelopment())
+{
+    try
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            var context = services.GetRequiredService<BDContext>();
+            var userManager = services.GetRequiredService<UserManager<GOPUser>>();
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+            // Asegurar que la base de datos est谩 creada
+            await context.Database.EnsureCreatedAsync();
+
+            // Ejecutar seeding
+            await DataSeeder.SeedDataAsync(context, userManager, roleManager, app.Configuration);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error durante el seeding: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        // No re-lanzar la excepci贸n, solo loguear para que la app pueda continuar
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "GOP API";
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    });
 }
 else
 {
@@ -185,9 +231,6 @@ else
 #endregion
 
 #region APP
-app.UseSwagger();
-app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "GOP v1"));
-
 app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
@@ -205,3 +248,60 @@ app.UseRequestLocalization();
 #endregion
 
 app.Run();
+
+static class OpenApiCycleBreaker
+{
+    // Para cada DTO, las propiedades de navegaci贸n a un solo objeto "padre/relacionado" que ya
+    // est谩n cubiertas por su respectivo campo *Id y que cierran un ciclo en el grafo de DTOs.
+    // Se excluyen s贸lo del schema de OpenAPI (ver AddOpenApi/Http.Json.JsonOptions en Program.cs),
+    // no de la serializaci贸n real de los controllers.
+    static readonly Dictionary<Type, string[]> PropiedadesCirculares = new()
+    {
+        [typeof(ContratoDTO)] = ["Zona", "Empresa"],
+        [typeof(ContratoDocDTO)] = ["Contrato"],
+        [typeof(ContratoItemDTO)] = ["Contrato", "Item"],
+        [typeof(ContratoItemControlDTO)] = ["ContratoItem", "ItemControl"],
+        [typeof(ContratoItemControlDocDTO)] = ["ContratoItemControl", "ItemControlDoc"],
+        [typeof(ContratoItemControlParamDTO)] = ["ContratoItemControl", "ItemControlParam", "Unidad"],
+        [typeof(ContratoEstructuraDTO)] = ["Contrato", "Calle", "EstructuraTipo", "EntreCalle", "YCalle", "EsquinaCalle"],
+        [typeof(ContratoEstructuraDocDTO)] = ["ContratoEstructura"],
+        [typeof(CertificadoDTO)] = ["Contrato", "ZonaProfesional", "EmpresaProfesional"],
+        [typeof(CertificadoDocDTO)] = ["Certificado"],
+        [typeof(CertificadoItemDTO)] = ["Certificado", "ItemContrato", "FrenteObra", "ContratoEstructura", "Unidad", "CertificadoItemDef"],
+        [typeof(CertificadoItemDefDTO)] = ["Certificado", "ItemContrato", "Unidad"],
+        [typeof(CertificadoItemControlDTO)] = ["CertificadoItem", "ContratoItemControl"],
+        [typeof(CertificadoItemControlDocDTO)] = ["CertificadoItemControl"],
+        [typeof(CertificadoItemControlParamDTO)] = ["CertificadoItemControl", "ContratoItemControlParam", "Unidad"],
+        [typeof(CertificadoItemControlParamDocDTO)] = ["CertificadoItemControlParam"],
+        [typeof(EventoDTO)] = ["Tipo", "Contrato", "Certificado", "Zona", "FrenteObra", "Empresa"],
+        [typeof(EventoDocDTO)] = ["Evento"],
+        [typeof(EventoParamDTO)] = ["Evento", "Unidad"],
+        [typeof(EventoParamDocDTO)] = ["EventoParam"],
+        [typeof(EventoRelacionadoDTO)] = ["Evento", "EventoRelacionado"],
+        [typeof(EmpresaProfesionalDTO)] = ["Empresa", "Persona"],
+        [typeof(ZonaProfesionalDTO)] = ["Zona", "Persona"],
+        [typeof(FrenteObraDTO)] = ["Zona"],
+        [typeof(FrenteObraProfesionalDTO)] = ["FrenteObra", "Persona"],
+        [typeof(ItemDTO)] = ["Unidad"],
+        [typeof(ItemDocDTO)] = ["Item"],
+        [typeof(ItemControlDTO)] = ["Item"],
+        [typeof(ItemControlDocDTO)] = ["ItemControl"],
+        [typeof(ItemControlParamDTO)] = ["ItemControl", "Unidad"],
+        [typeof(ParamCatalogDTO)] = ["Unidad"],
+    };
+
+    public static void RemoveCyclicNavigationProperties(JsonTypeInfo typeInfo)
+    {
+        if (!PropiedadesCirculares.TryGetValue(typeInfo.Type, out var nombres))
+            return;
+
+        // ShouldSerialize solo afecta la serializaci贸n de instancias; el exportador de schema de
+        // OpenAPI recorre la metadata del tipo igual. Hay que sacar la propiedad de la lista para
+        // que ni siquiera aparezca en el schema generado.
+        for (var i = typeInfo.Properties.Count - 1; i >= 0; i--)
+        {
+            if (Array.IndexOf(nombres, typeInfo.Properties[i].Name) >= 0)
+                typeInfo.Properties.RemoveAt(i);
+        }
+    }
+}

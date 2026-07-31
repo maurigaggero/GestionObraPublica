@@ -1,12 +1,11 @@
-﻿using GOP.BD.Data.Entity;
-using Microsoft.AspNetCore.Components.Forms;
+﻿using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 
 namespace GOP.Client.Helpers
 {
     public class Utils
     {
-        private static IJSRuntime JS;   
+        private static IJSRuntime JS;
         public Utils(IJSRuntime runtime)
         {
             JS = runtime;
@@ -16,8 +15,8 @@ namespace GOP.Client.Helpers
         {
             string base64String = "";
             IBrowserFile archivo;
-            DocumentoDTO documento = new DocumentoDTO();  
-            
+            DocumentoDTO documento = new DocumentoDTO();
+
             foreach (var file in files)
             {
                 if (Path.GetExtension(file.Name).Contains("jpeg") || Path.GetExtension(file.Name).Contains("jpg"))
