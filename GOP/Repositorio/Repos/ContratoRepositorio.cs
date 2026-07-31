@@ -22,6 +22,8 @@ namespace GOP.Repositorio.Repos
                 var res = await Context.Set<Contrato>()
                                     .AsNoTracking()
                                     .Include(e => e.Empresa)
+                                    .Include(e => e.ContratoItems)
+                                    .ThenInclude(e => e.Item)
                                     .FirstOrDefaultAsync(e => e.Id == id);
                 return res;
             }

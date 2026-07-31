@@ -1,5 +1,4 @@
-﻿using GOP.BD.Data.Entity;
-using GOP.Shared.DTOs.Entity;
+﻿using GOP.Shared.DTOs.Entity;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
 using System.Text;

@@ -70,7 +70,11 @@ namespace GOP.Server.Controllers.Identity
         [HttpPost("login")]
         public async Task<ActionResult<RespuestaAutenticacionDTO>> Login(CredencialUserDTO credencial)
         {
-            var resultado = await signInManager.PasswordSignInAsync(credencial.Email,
+            var usuario = await userManager.FindByEmailAsync(credencial.Email);
+            if (usuario == null)
+                return BadRequest("Usuario o Pasword Incorrecto...");
+
+            var resultado = await signInManager.PasswordSignInAsync(usuario,
                                                                     credencial.Psw,
                                                                     isPersistent: false,
                                                                     lockoutOnFailure: false);
@@ -150,7 +154,8 @@ namespace GOP.Server.Controllers.Identity
                 if (usuario != null)
                 {
                     IList<Claim> claims = await userManager.GetClaimsAsync(usuario);
-                    persona.Rol = claims.Where(claim => claim.Type == ClaimTypes.Role).FirstOrDefault().Value;
+                    var rolClaim = claims.Where(claim => claim.Type == ClaimTypes.Role).FirstOrDefault();
+                    persona.Rol = rolClaim?.Value ?? null;
                 }
                 else
                     persona.Rol = null;

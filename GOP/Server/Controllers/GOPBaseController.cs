@@ -14,9 +14,10 @@ namespace GOP.Server.Controllers
     {
         protected string ObtenerUserId()
         {
-            return HttpContext.User.Claims
-                            .Where(claim => claim.Type == "Id")
-                            .FirstOrDefault().Value;
+            var claim = HttpContext.User.Claims
+                            .Where(c => c.Type == "Id")
+                            .FirstOrDefault();
+            return claim?.Value;
         }
 
         protected GOPUser ObtenerGOPUser(UserManager<GOPUser> userManager)
@@ -37,9 +38,10 @@ namespace GOP.Server.Controllers
         }
         protected string ObtenerRol()
         {
-            return HttpContext.User.Claims
-                            .Where(claim => claim.Type == ClaimTypes.Role)
-                            .FirstOrDefault().Value;
+            var claim = HttpContext.User.Claims
+                            .Where(c => c.Type == ClaimTypes.Role)
+                            .FirstOrDefault();
+            return claim?.Value;
         }
         protected void ActualizaEntidadBase<T>(T entidad) where T : class, IEntidadBase
         {
@@ -90,7 +92,7 @@ namespace GOP.Server.Controllers
         // Metodo para generar Reportes de Tipo Excel
         protected byte[] ExportToExcel<T>(List<T> table, string filename)
         {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            ExcelPackage.License.SetNonCommercialOrganization("GOP - Gestión de Obra Pública");
             using ExcelPackage pack = new ExcelPackage();
             ExcelWorksheet ws = pack.Workbook.Worksheets.Add(filename);
             ws.Cells["A1"].LoadFromCollection(table, true, TableStyles.Light1);
